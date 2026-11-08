@@ -1,1 +1,1 @@
-#retire
+#retire.github.io
