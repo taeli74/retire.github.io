@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="취향을 찾고 노후 현금흐름을 점검하는 시범 서비스(가칭)">
+<title>취향기반 은퇴자 Life Butler (시범)</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+
+/* Layout concept: a five-step funnel across the top, one working panel below. Cards are answered one by one, then connected, typed, matched to products, and finally priced against cash flow. */
+:root {
+  --bg: #EEF0EE; --surface: #F8FAF9; --raised: #FFFFFF; --fg: #1B2321; --muted: #5E6A66; --line: #CFD7D3; --board: #E7EBE8;
+  --warn: #A33B3B; --ok: #2E6B45; --amber: #9A6414; --amber-bg: #F3E6CF;
+  --k-sense: #2F6F8F; --k-people: #8A4A6B; --k-object: #3F7A4F; --k-drive: #9A6414; --k-rule: #6F6A5E; --k-way: #6B5BA6; --k-pay: #B0543A;
+  --font: "Paperlogy", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121817; --surface: #1A2220; --raised: #212B28; --fg: #E6EBE8; --muted: #97A5A0; --line: #2F3B38; --board: #0E1413;
+    --warn: #E58A8A; --ok: #86C79B; --amber: #E0AC5B; --amber-bg: #33281A;
+    --k-sense: #7FB9D6; --k-people: #D79AB8; --k-object: #8CC79B; --k-drive: #E0AC5B; --k-rule: #BDB6A3; --k-way: #B3A7E6; --k-pay: #E29A80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121817; --surface: #1A2220; --raised: #212B28; --fg: #E6EBE8; --muted: #97A5A0; --line: #2F3B38; --board: #0E1413;
+  --warn: #E58A8A; --ok: #86C79B; --amber: #E0AC5B; --amber-bg: #33281A;
+  --k-sense: #7FB9D6; --k-people: #D79AB8; --k-object: #8CC79B; --k-drive: #E0AC5B; --k-rule: #BDB6A3; --k-way: #B3A7E6; --k-pay: #E29A80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.65; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+.wrap > * { min-width: 0; }
+h1, h2, h3 { font-weight: 800; margin: 0; line-height: 1.3; text-wrap: balance; }
+h1 { font-size: clamp(26px, 5vw, 38px); letter-spacing: -0.015em; }
+h2 { font-size: 21px; } h3 { font-size: 17px; }
+p { margin: 0; } b { font-weight: 600; }
+.muted { color: var(--muted); } .small { font-size: 13px; }
+.lead { max-width: 64ch; color: var(--muted); }
+button, input { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--k-sense); outline-offset: 2px; }
+.btn { padding: 6px 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; cursor: pointer; font-size: 14px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tag { display: inline-flex; padding: 0 9px; border-radius: 999px; font-size: 12px; line-height: 1.8; border: 1px solid var(--line); background: var(--raised); white-space: nowrap; }
+.tag.as { color: var(--amber); border-color: var(--amber); background: var(--amber-bg); }
+.tag.ok { color: var(--ok); border-color: var(--ok); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* funnel */
+.steps { display: flex; flex-wrap: wrap; gap: 12px; }
+.grp { flex: 1 1 320px; display: grid; gap: 6px; min-width: 0; align-content: start; }
+.gb { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 560px) { .gb { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.steps button { text-align: left; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; cursor: pointer; display: grid; gap: 2px; min-width: 0; }
+.steps button b { font-size: 14px; }
+.steps button span { font-size: 12px; color: var(--muted); }
+.steps button[aria-current="step"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.steps button[aria-current="step"] span { color: var(--bg); opacity: .8; }
+.prog { height: 6px; background: var(--board); border-radius: 3px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--k-object); }
+.panel { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 16px; }
+.cat { display: grid; gap: 8px; }
+.cat > .lab { font-size: 12px; color: var(--muted); letter-spacing: .05em; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.card { text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-top: 4px solid var(--kc); background: var(--surface); border-radius: 6px; cursor: pointer; display: grid; gap: 2px; }
+.card[aria-pressed="true"] { outline: 2px solid var(--fg); }
+.card.done { background: var(--raised); }
+.card .st { font-size: 12px; color: var(--muted); }
+.card.done .st { color: var(--ok); }
+
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.seg button { text-align: left; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; cursor: pointer; display: grid; gap: 2px; min-width: 0; font: inherit; color: inherit; }
+.seg button b { font-size: 15px; }
+.seg button span { font-size: 12px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.seg button[aria-pressed="true"] span { color: var(--bg); opacity: .8; }
+.scn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.scb { text-align: left; padding: 8px; border: 2px solid var(--line); background: var(--surface); border-radius: 12px; cursor: pointer; display: grid; gap: 4px; align-content: start; min-width: 0; font: inherit; color: inherit; }
+.scb b { font-size: 15px; line-height: 1.4; }
+.scb > span:last-child { font-size: 13px; color: var(--muted); }
+.scb[aria-pressed="true"] { border-color: var(--fg); outline: 2px solid var(--fg); }
+.sart { display: block; border-radius: 8px; overflow: hidden; aspect-ratio: 3 / 2; }
+.sart svg { width: 100%; height: 100%; display: block; }
+.sart .w { fill: #fff; } .sart .w2 { fill: #fff; fill-opacity: .6; } .sart .d { fill: #000; fill-opacity: .26; }
+@media (min-width: 760px) { .scn { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.pfs { position: relative; }
+.pfs button { white-space: nowrap; }
+.pbar { position: sticky; top: 0; z-index: 3; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; }
+.pcat { display: grid; gap: 8px; }
+.phd { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.phd h3 { font-size: 17px; }
+.pcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.pc { text-align: left; padding: 10px 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; cursor: pointer; display: grid; gap: 4px; align-content: start; min-width: 0; font: inherit; color: inherit; }
+.pc[aria-pressed="true"] { border-color: var(--fg); outline: 2px solid var(--fg); background: var(--raised); }
+.pc .pt { font-weight: 700; line-height: 1.4; }
+.pc .pm { font-size: 14px; }
+.pc .pw { font-size: 12px; color: var(--muted); }
+.pc .pd { font-size: 12px; color: var(--muted); display: flex; gap: 4px; align-items: center; }
+.pc .pd b { margin-left: auto; color: var(--fg); font-size: 13px; }
+
+.plans { display: grid; gap: 10px; }
+.plc { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.occ { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; align-items: end; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; }
+.plc input[type="date"] { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); min-width: 0; }
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.cal .wd { text-align: center; font-size: 12px; color: var(--muted); padding: 2px 0; }
+.cd { min-height: 64px; border: 1px solid var(--line); border-radius: 6px; padding: 3px; background: var(--surface); display: grid; gap: 2px; align-content: start; min-width: 0; overflow: hidden; }
+.cd.off { border: 0; background: transparent; }
+.cd.today { outline: 2px solid var(--fg); }
+.cd .dn { font-size: 12px; color: var(--muted); }
+.ev { display: block; font-style: normal; font-size: 11px; line-height: 1.5; padding: 0 4px; border-radius: 3px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev.k-m { background: var(--k-sense); } .ev.k-o { background: var(--amber); } .ev.k-u { background: var(--ok); }
+.cd .more { font-size: 11px; color: var(--muted); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+.legend .ev { display: inline-block; width: 12px; height: 12px; padding: 0; vertical-align: -1px; margin-right: 4px; }
+@media (max-width: 560px) { .cd { min-height: 46px; } .ev { font-size: 0; height: 5px; padding: 0; } }
+.q { display: grid; gap: 8px; }
+.q .qt { font-weight: 600; }
+.opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.opts button { padding: 6px 12px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; cursor: pointer; font-size: 14px; text-align: left; }
+.opts button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.result { border-left: 3px solid var(--ok); padding-left: 12px; display: grid; gap: 2px; font-size: 14px; }
+.banner { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px; border: 1px solid var(--ok); border-radius: 8px; background: var(--surface); font-size: 14px; }
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 560px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; background: var(--surface); }
+tr:last-child td { border-bottom: 0; }
+th:first-child, td:first-child { white-space: nowrap; }
+.chip { display: inline-flex; padding: 1px 9px; margin: 2px 4px 2px 0; border: 1px solid var(--line); border-left: 4px solid var(--kc, var(--line)); border-radius: 6px; font-size: 13px; background: var(--raised); }
+.types { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.type { text-align: left; padding: 14px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; cursor: pointer; display: grid; gap: 6px; }
+.type[aria-pressed="true"] { outline: 2px solid var(--fg); background: var(--raised); }
+.meter { height: 6px; border-radius: 3px; background: var(--board); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--k-sense); }
+.prods { display: grid; gap: 8px; }
+.prod { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto auto; gap: 6px 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.prod .d { font-size: 12px; color: var(--muted); }
+.prod .c { font-variant-numeric: tabular-nums; font-size: 14px; white-space: nowrap; }
+@media (max-width: 560px) { .prod { grid-template-columns: 1fr auto; } .prod .d { grid-column: 1 / -1; } }
+.prod[data-on="1"] { background: var(--raised); border-color: var(--fg); }
+.calc { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; align-items: start; }
+.field { display: grid; grid-template-columns: 1fr 140px; gap: 4px 10px; align-items: center; font-size: 14px; }
+.field input { width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); text-align: right; font-variant-numeric: tabular-nums; }
+.sum { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.sum .r { text-align: right; }
+.sum .big { font-weight: 800; font-size: 18px; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+.sum .bad { color: var(--warn); } .sum .good { color: var(--ok); }
+.lev { display: grid; gap: 8px; }
+.lev div.i { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 14px; }
+
+.hero { display: grid; gap: 2px; padding: 4px 0 8px; }
+.hero b { font-size: clamp(40px, 9vw, 64px); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.hero span { font-size: 13px; color: var(--muted); }
+.prop { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.sub { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.field select { width: 100%; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); font: inherit; }
+.stack { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--board); }
+.stack i { display: block; height: 100%; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+.cols3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 8px; }
+.cols3 .i { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 13px; }
+.ok2 { border-color: var(--ok) !important; } .warn2 { border-color: var(--amber) !important; background: var(--amber-bg) !important; }
+.nav { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.note { font-size: 13px; color: var(--muted); max-width: 70ch; }
+.prod.miss { grid-template-columns: 76px minmax(0, 1fr); background: var(--board); border-style: dashed; }
+.gate { display: grid; gap: 14px; justify-items: start; }
+.facts { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.box { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.gwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.gwrap svg { display: block; min-width: 600px; width: 100%; height: auto; }
+.gwrap text { fill: var(--fg); font-family: var(--font); font-size: 12px; }
+td .meter { margin-top: 4px; min-width: 60px; }
+.s1 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.s1c { display: grid; gap: 14px; min-width: 0; }
+.s1c .cards { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+.s1q { position: sticky; top: 12px; border: 1px solid var(--fg); border-radius: 8px; padding: 16px; background: var(--surface); min-width: 0; max-height: calc(100vh - 24px); overflow-y: auto; }
+@media (max-width: 820px) { .s1 { grid-template-columns: minmax(0, 1fr); } .s1q { position: static; order: -1; max-height: none; } }
+.qpanel { grid-column: 1 / -1; border: 1px solid var(--fg); border-radius: 8px; padding: 16px; background: var(--surface); }
+.s1c .cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+
+.pubnote { padding: 10px 14px; border: 1px solid var(--amber); border-radius: 8px; background: var(--amber-bg); font-size: 14px; line-height: 1.6; }
+.pubfoot { font-size: 13px; color: var(--muted); display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 14px; }
+.pubfoot p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pubnote" role="note">
+    <b>시범 서비스입니다(가칭).</b>
+    입력한 내용은 이 기기의 브라우저에만 저장되고 서버로 보내지지 않습니다. 금액, 비용, 수익률, 세금 수치는 예시와 가정이며 투자 권유나 세무·법률 자문이 아닙니다. 세금과 한도는 바뀔 수 있으니 국세청과 세무 전문가에게 확인하세요.
+  </div>
+  <header style="display:grid;gap:8px">
+    <div class="row"><span class="tag as">가칭</span><span class="tag as">시안</span><span class="tag">시범 카드 28장</span></div>
+    <h1>취향기반 은퇴자 Life Butler</h1>
+    <p class="lead">서비스는 네 가지로 나뉘고 각각 따로 쓸 수 있습니다. 취향 찾기(취향찾기 카드 28장으로 취향과 은퇴 유형), 취향 소비(유형에 맞는 서비스와 상품 추천), 현금흐름 설계(만족 여부에 따른 가이드와 세금 관점 안내, 계획과 기록), 자산 시뮬레이션(자산으로 현금흐름 예상)입니다. 금융 상품 추천은 하지 않으며, 상품 이름, 비용, 수익률은 모두 예시와 가정입니다.</p>
+  </header>
+  <nav class="steps" id="steps" aria-label="진행 단계"></nav>
+  <div class="row"><div class="prog" style="flex:1;min-width:160px" aria-hidden="true"><i id="pg"></i></div><span class="small muted" id="pgt"></span><button class="btn" id="demo">종훈 님 예시로 채우기(일부 카드는 비움)</button><button class="btn" id="reset">처음부터</button><button class="btn" id="bk-exp">내 입력 내보내기</button><button class="btn" id="bk-imp">불러오기</button><input type="file" id="bk-file" accept=".json,application/json" hidden></div><div class="small muted" id="bk-msg" role="status"></div>
+  <main class="panel" id="panel" aria-live="polite"></main>
+  <footer class="pubfoot">
+    <p>이 서비스는 금융상품을 추천하거나 판매하지 않습니다. 취향 소비 카드의 상품과 비용은 시안용 예시입니다.</p>
+    <p>입력은 브라우저에만 저장되므로 캐시를 지우거나 다른 기기로 옮기면 사라집니다. 위쪽의 "내 입력 내보내기"로 파일을 저장해 두세요. 파일에는 입력한 금융 정보가 그대로 들어 있습니다.</p>
+  </footer>
+</div>
+<script>
+(function () {
+  var DOM = { shop: '쇼핑', trip: '여행', meal: '식사', edu: '교육', rest: '휴식', hobby: '취미·콘텐츠', sport: '운동·활동', health: '건강관리', med: '의료', home: '주거·생활', social: '관계·모임', work: '일·사회참여', car: '이동·차량' };
+  var DKEYS = ['shop', 'trip', 'meal', 'edu', 'rest', 'hobby', 'sport', 'health', 'med', 'home', 'social', 'work', 'car'];
+  var KC = { '감각 조건': 'var(--k-sense)', '사람 조건': 'var(--k-people)', '좋아하는 대상': 'var(--k-object)', '동기': 'var(--k-drive)', '방식': 'var(--k-way)', '조절 원리': 'var(--k-rule)', '지불 가치': 'var(--k-pay)' };
+
+  /* 카드: q[0]=강도(점수), q[1]=중요한 영역(영역키), q[2]=결(메모). 4번째 질문은 관계(REL_C)에서 자동 생성 */
+  function Q(t, o) { return [t, o]; }
+  var CARDS = [
+    { id: 'quiet', cat: '감각 조건', t: '조용함', q: [
+      Q('조용하지 않으면 어떻게 되나요?', [['집중을 못 하거나 그 자리를 피하게 돼요', 3], ['불편하지만 참을 수 있어요', 2], ['크게 상관없어요', 1]]),
+      Q('조용함이 가장 필요한 곳은 어디인가요?', [['카페·도서관', 'edu'], ['식당', 'meal'], ['숙소', 'rest'], ['여행지', 'trip']]),
+      Q('같은 소음이라도 더 힘든 것은요?', [['무례한 사람이 내는 소리', '무례한 사람의 소리가 더 힘듦'], ['소리 크기 자체', '소리 크기 자체가 힘듦'], ['둘 다 같아요', '둘 다 같음']])] },
+    { id: 'dim', cat: '감각 조건', t: '은은한 조명과 뷰', q: [
+      Q('식당이나 숙소를 고를 때 조명과 뷰는?', [['가장 먼저 봐요', 3], ['있으면 좋아요', 2], ['보지 않아요', 1]]),
+      Q('가장 중요한 곳은요?', [['식당', 'meal'], ['숙소', 'rest'], ['작업·공부 공간', 'edu'], ['여행 중 전망', 'trip']]),
+      Q('어떤 뷰가 좋은가요?', [['도시 야경', '도시 야경'], ['호수나 자연', '호수나 자연'], ['탁 트인 창', '탁 트인 창']])] },
+    { id: 'tidy', cat: '감각 조건', t: '청결과 정돈', q: [
+      Q('청결하지 않은 곳에 가게 되면?', [['바로 나가요', 3], ['불편하지만 머물러요', 2], ['크게 신경 쓰지 않아요', 1]]),
+      Q('가장 중요한 곳은요?', [['식당', 'meal'], ['숙소', 'rest'], ['집과 생활공간', 'home'], ['사우나 같은 공용시설', 'rest']]),
+      Q('어떤 점이 가장 신경 쓰이나요?', [['위생과 냄새', '위생과 냄새'], ['정돈된 배치', '정돈된 배치'], ['관리 상태', '관리 상태']])] },
+    { id: 'open', cat: '감각 조건', t: '탁 트인 공간', q: [
+      Q('답답한 공간에서는?', [['오래 못 있어요', 3], ['조금 불편해요', 2], ['상관없어요', 1]]),
+      Q('가장 중요한 곳은요?', [['일하는 공간', 'work'], ['집', 'home'], ['숙소', 'rest'], ['여행 중 전망', 'trip']]),
+      Q('어떤 형태가 좋은가요?', [['통창과 낮은 층', '통창과 낮은 층'], ['도시 한가운데의 열린 곳', '도시의 열린 공간'], ['자연 전망', '자연 전망']])] },
+    { id: 'mild', cat: '감각 조건', t: '순한 맛', q: [
+      Q('간이 센 음식은?', [['피해요', 3], ['가끔은 괜찮아요', 2], ['잘 먹어요', 1]]),
+      Q('가장 신경 쓰는 곳은요?', [['외식', 'meal'], ['건강 관리', 'health'], ['집에서 직접 만들기', 'home'], ['여행 중 식사', 'trip']]),
+      Q('이유는 무엇인가요?', [['건강 때문에', '건강 때문에'], ['맛이 가려져서', '맛이 가려져서'], ['오래된 입맛', '오래된 입맛']])] },
+    { id: 'care', cat: '사람 조건', t: '공공장소의 배려', q: [
+      Q('공공장소에서 배려 없는 사람을 만나면?', [['내 시간을 망쳐서 화가 나요', 3], ['불쾌하지만 넘겨요', 2], ['별로 신경 쓰지 않아요', 1]]),
+      Q('가장 민감한 곳은요?', [['식당', 'meal'], ['이동·여행', 'trip'], ['휴식 공간', 'rest'], ['수업·모임', 'edu']]),
+      Q('그럴 때 어떻게 하나요?', [['피해요', '피하는 편'], ['직접 말해요', '직접 말하는 편'], ['참고 지나가요', '참고 넘기는 편']])] },
+    { id: 'social', cat: '사람 조건', t: '함께하는 시간', q: [
+      Q('사람들과 어울리는 시간은 얼마나 필요한가요?', [['많을수록 좋아요', 3], ['가끔 적당히요', 2], ['혼자가 편해요', 1]]),
+      Q('어울리고 싶은 방식은요?', [['소수와 깊은 대화', 'meal'], ['취미 모임', 'social'], ['동행 여행', 'trip'], ['같이 쉬는 시간', 'rest']]),
+      Q('혼자 있는 시간도 필요한가요?', [['꼭 필요해요', '혼자 시간 필수'], ['가끔요', '혼자 시간 가끔'], ['거의 필요 없어요', '혼자 시간 불필요']])] },
+    { id: 'resp', cat: '사람 조건', t: '일의 책임', q: [
+      Q('책임지지 않는 사람을 보면?', [['참기 어려워요', 3], ['불편해요', 2], ['개의치 않아요', 1]]),
+      Q('가장 민감한 곳은요?', [['일·프로젝트', 'work'], ['모임·단체', 'social'], ['팀 활동', 'edu'], ['가족·가까운 관계', 'social']]),
+      Q('그럴 때 반응은요?', [['명확히 소통해서 바로잡아요', '명확히 소통해 바로잡음'], ['질책이나 훈계로 이어져요', '질책·훈계로 이어짐'], ['거리를 둬요', '거리를 둠']])] },
+    { id: 'culture', cat: '좋아하는 대상', t: '미술·역사·지식', q: [
+      Q('일정에서 얼마나 중요한가요?', [['일정의 중심이에요', 3], ['곁들이면 좋아요', 2], ['별로예요', 1]]),
+      Q('가장 끌리는 형태는요?', [['미술관·박물관', 'trip'], ['강연·강좌', 'edu'], ['책 읽기', 'hobby'], ['역사 도시 걷기', 'trip']]),
+      Q('누구와 하나요?', [['혼자', '혼자'], ['한두 명과', '한두 명과'], ['여럿이', '여럿이']])] },
+    { id: 'onsen', cat: '좋아하는 대상', t: '온천·사우나', q: [
+      Q('얼마나 좋아하나요?', [['꼭 포함해요', 3], ['있으면 좋아요', 2], ['잘 안 해요', 1]]),
+      Q('주로 어디서 하나요?', [['동네 사우나', 'rest'], ['온천 여행', 'trip'], ['호텔 스파', 'rest'], ['집에서 하는 홈 웰니스', 'home']]),
+      Q('무엇이 좋은가요?', [['혼자 생각하는 시간', '혼자 생각하는 시간'], ['몸이 맑아지는 느낌', '몸이 맑아지는 느낌'], ['젊어지는 느낌', '젊어지는 느낌']])] },
+    { id: 'food', cat: '좋아하는 대상', t: '맛집과 음식', q: [
+      Q('맛집과 음식은 얼마나 중요한가요?', [['꼭 일정에 넣어요', 3], ['있으면 좋아요', 2], ['크게 신경 쓰지 않아요', 1]]),
+      Q('가장 즐기는 곳은요?', [['외식', 'meal'], ['여행 중 맛집', 'trip'], ['미식 취미', 'hobby'], ['집에서 요리', 'home']]),
+      Q('어떤 면이 중요한가요?', [['한식·중식·양식 모두 좋아해요', '모든 음식 선호'], ['분위기와 뷰가 중요해요', '분위기와 뷰 중시'], ['맛집을 고르는 자신감이에요', '맛집 선택의 자신감']])] },
+    { id: 'cook', cat: '좋아하는 대상', t: '직접 만들기', q: [
+      Q('집에서 만들어 먹는 것은?', [['즐겨요', 3], ['가끔 해요', 2], ['안 해요', 1]]),
+      Q('어디에 돈을 쓰나요?', [['요리 장비', 'shop'], ['식재료', 'meal'], ['요리 취미', 'hobby'], ['집 주방', 'home']]),
+      Q('어떤 요리가 좋은가요?', [['철판·구이', '철판·구이'], ['스파게티·감바스 같은 양식', '집 양식'], ['장비는 여유 있을 때 구비', '장비는 여유 있을 때']])] },
+    { id: 'nature', cat: '좋아하는 대상', t: '자연', q: [
+      Q('자연을 찾는 정도는?', [['자주 찾아요', 3], ['가끔요', 2], ['별로예요', 1]]),
+      Q('어디에서 중요한가요?', [['여행', 'trip'], ['운동', 'sport'], ['휴식', 'rest'], ['주거 환경', 'home']]),
+      Q('어떤 자연이 좋은가요?', [['조용한 자연', '조용한 자연'], ['가벼운 걷기 코스', '가벼운 걷기'], ['풍경 감상', '풍경 감상']])] },
+    { id: 'move', cat: '좋아하는 대상', t: '운동과 활동', q: [
+      Q('몸을 움직이는 활동은?', [['정기적으로 해요', 3], ['가끔 해요', 2], ['거의 안 해요', 1]]),
+      Q('어떤 형태가 좋은가요?', [['걷기·산책', 'sport'], ['헬스·수영', 'sport'], ['동호회 활동', 'social'], ['골프', 'sport'], ['테니스·피클볼 같은 구기 운동', 'sport'], ['관리받는 건강 프로그램', 'health']]),
+      Q('누구와 하나요?', [['혼자', '혼자 운동'], ['함께', '함께 운동'], ['코치와 함께', '관리받는 운동'], ['골프 라운딩', '골프 라운딩'], ['구기·라켓 운동', '구기·라켓 운동']])] },
+    { id: 'read', cat: '좋아하는 대상', t: '책과 콘텐츠', q: [
+      Q('책, 영화, 공연을 가까이하는 정도는?', [['매일 가까이해요', 3], ['가끔요', 2], ['거의 안 해요', 1]]),
+      Q('가장 즐기는 것은요?', [['독서', 'hobby'], ['영화·공연', 'hobby'], ['강의·강연', 'edu'], ['글쓰기', 'work']]),
+      Q('어디에서 즐기나요?', [['혼자 있는 시간에', '혼자 시간에 즐김'], ['카페나 도서관에서', '카페·도서관'], ['집에서', '집에서']])] },
+    { id: 'romance', cat: '동기', t: '살아보지 못한 곳의 로망', q: [
+      Q('가보지 못한 도시에 얼마나 끌리나요?', [['크게 끌려요', 3], ['조금요', 2], ['별로 없어요', 1]]),
+      Q('어떤 곳인가요?', [['해외 대도시', 'trip'], ['역사 도시', 'trip'], ['한 달 살기', 'trip'], ['그곳의 맛집', 'meal']]),
+      Q('가장 얻고 싶은 느낌은요?', [['로망이 이뤄지는 느낌', '로망'], ['유명한 곳에 간 느낌', '유명한 곳에 간 느낌'], ['맛집 취향에 대한 자신감', '맛집 취향 자신감']])] },
+    { id: 'novelty', cat: '동기', t: '새로움', q: [
+      Q('새로운 것을 시도하는 편인가요?', [['즐겨요', 3], ['조금 조심해요', 2], ['익숙한 게 좋아요', 1]]),
+      Q('어디에서 시도하나요?', [['여행', 'trip'], ['취미', 'hobby'], ['배움', 'edu'], ['사람들과의 모임', 'social']]),
+      Q('어떻게 시도하나요?', [['혼자 먼저', '혼자 시도'], ['누군가 이끌어 주면', '이끌어 주면 시도'], ['검증된 뒤에', '검증된 뒤 시도']])] },
+    { id: 'recover', cat: '동기', t: '회복', q: [
+      Q('지칠 때 혼자 쉬는 시간이 필요한가요?', [['꼭 필요해요', 3], ['가끔요', 2], ['별로요', 1]]),
+      Q('어디에서 회복하나요?', [['사우나·온천', 'rest'], ['카페·영화', 'hobby'], ['집에서 아무것도 안 하기', 'home'], ['여행', 'trip']]),
+      Q('어떤 방식인가요?', [['아무것도 안 하기', '아무것도 안 함'], ['몸을 데우기', '몸을 데움'], ['혼자 생각하기', '혼자 생각']])] },
+    { id: 'status', cat: '동기', t: '상징과 보이는 것', q: [
+      Q('가방, 시계, 자동차 같은 물건에 끌리나요?', [['많이 끌려요', 3], ['조금요', 2], ['거의 없어요', 1]]),
+      Q('어떤 영역에 끌리나요?', [['쇼핑', 'shop'], ['이동·차량', 'car'], ['여행', 'trip'], ['식사', 'meal']]),
+      Q('끌리는 이유는요?', [['쓸 때의 즐거움', '쓰는 즐거움'], ['보이는 모습', '보이는 모습'], ['오래 가는 가치', '오래 가는 가치']])] },
+    { id: 'growth', cat: '동기', t: '성장과 배움', q: [
+      Q('계속 배우고 싶은가요?', [['계속 배우고 싶어요', 3], ['관심 있는 것만요', 2], ['충분해요', 1]]),
+      Q('어떤 형태가 좋은가요?', [['강좌', 'edu'], ['자격·학위', 'edu'], ['독서', 'hobby'], ['일에서의 성장', 'work']]),
+      Q('어떻게 배우나요?', [['혼자 공부', '혼자 공부'], ['소규모 수업', '소규모 수업'], ['성과로 확인', '성과로 확인']])] },
+    { id: 'perf', cat: '방식', t: '성과 중심 일하기', q: [
+      Q('일하는 방식은?', [['시간보다 성과로 평가받고 싶어요', 3], ['반반이에요', 2], ['정해진 시간이 편해요', 1]]),
+      Q('가장 중요한 것은요?', [['일하는 공간', 'work'], ['일하는 시간대', 'work'], ['협업 방식', 'social'], ['보상 방식', 'work']]),
+      Q('어떤 점이 중요한가요?', [['출퇴근에 얽매이기 싫어요', '출퇴근 얽매임 싫음'], ['목표와 책임이 명확해야 해요', '목표·책임 명확'], ['조용한 공간이어야 해요', '조용한 공간 선호']])] },
+    { id: 'home', cat: '방식', t: '집과 생활공간', q: [
+      Q('집을 고르는 조건이 분명한가요?', [['분명해요', 3], ['어느 정도요', 2], ['별로 없어요', 1]]),
+      Q('가장 관심 있는 것은요?', [['사는 곳 선택', 'home'], ['집 꾸미기', 'shop'], ['이사·거주 계획', 'home'], ['이웃 환경', 'social']]),
+      Q('어떤 곳이 좋은가요?', [['조용한 동네', '조용한 동네'], ['도심 접근성', '도심 접근성'], ['자연 가까이', '자연 가까이']])] },
+    { id: 'work', cat: '방식', t: '일과 사회참여', q: [
+      Q('은퇴 후에도 일하고 싶나요?', [['계속 하고 싶어요', 3], ['가볍게 하고 싶어요', 2], ['쉬고 싶어요', 1]]),
+      Q('어떤 형태가 좋은가요?', [['자문·강의', 'work'], ['창업', 'work'], ['시간제 일', 'work'], ['봉사·활동', 'social']]),
+      Q('일하는 이유는요?', [['전문성을 살리고 싶어요', '전문성 활용'], ['소득이 필요해요', '소득 목적'], ['보람을 느끼고 싶어요', '보람 목적']])] },
+    { id: 'value', cat: '조절 원리', t: '가성비와 실속', q: [
+      Q('좋아하는 것을 살 때 어떻게 하나요?', [['경제적 뒷받침이 안 되면 사지 않아요', 3], ['가끔 무리해요', 2], ['먼저 쓰고 봐요', 1]]),
+      Q('아끼기 가장 어려운 영역은요?', [['쇼핑', 'shop'], ['여행', 'trip'], ['식사', 'meal'], ['교육', 'edu']]),
+      Q('사고 싶은 욕구는 어떤가요?', [['사치품에 끌리지만 절제해요', '사치품에 끌리나 절제'], ['별로 없어요', '소비 욕구 낮음'], ['보상으로 가끔 사요', '보상 소비']])] },
+    { id: 'health', cat: '조절 원리', t: '건강을 위한 조절', q: [
+      Q('건강 때문에 좋아하는 것을 줄이나요?', [['자주 줄여요', 3], ['의식은 해요', 2], ['신경 쓰지 않아요', 1]]),
+      Q('가장 신경 쓰는 영역은요?', [['식사', 'meal'], ['운동·휴식', 'sport'], ['검진·의료', 'med'], ['수면·생활 습관', 'health']]),
+      Q('어떻게 조절하나요?', [['줄여요', '줄이는 방식'], ['집에서 만들어 대체해요', '집에서 대체'], ['가끔 허용해요', '가끔 허용']])] },
+    { id: 'secure', cat: '조절 원리', t: '재무 안정', q: [
+      Q('돈에서 안정과 수익 중 무엇이 먼저인가요?', [['안정이 먼저예요', 3], ['균형이에요', 2], ['수익이 먼저예요', 1]]),
+      Q('가장 지키고 싶은 것은요?', [['생활비', 'shop'], ['주거', 'home'], ['의료비', 'med'], ['여행·여가', 'trip']]),
+      Q('안정이란 무엇인가요?', [['고정 수입이 있는 것', '고정 수입 중시'], ['손실이 없는 것', '손실 회피'], ['현금 여유가 있는 것', '현금 여유 중시']])] },
+    { id: 'risk', cat: '조절 원리', t: '위험 감수', q: [
+      Q('투자 손실 가능성을 감수할 수 있나요?', [['어느 정도 감수해요', 3], ['조금만요', 2], ['감수하기 어려워요', 1]]),
+      Q('위험을 감수해도 좋은 곳은요?', [['여행·경험', 'trip'], ['창업·일', 'work'], ['취미', 'hobby'], ['쇼핑', 'shop']]),
+      Q('어떤 조건이면 감수하나요?', [['잃어도 되는 돈만', '여윳돈만'], ['공부한 뒤에', '공부 후 판단'], ['전문가와 함께', '전문가와 함께']])] },
+    { id: 'pay', cat: '지불 가치', t: '지불 가치', q: [
+      Q('취향에 쓰는 한 달 예산은 어느 정도가 편한가요?', [['월 100만 원 이상', 3], ['월 30만~100만 원', 2], ['월 30만 원 미만', 1]]),
+      Q('돈이 아깝지 않은 영역은 어디인가요?', [['여행', 'trip'], ['식사', 'meal'], ['쇼핑', 'shop'], ['교육', 'edu']]),
+      Q('돈을 쓸 만하다고 느끼는 이유는요?', [['쓸 때의 즐거움과 품질', '즐거움과 품질에 지불'], ['남에게 보이는 모습', '보이는 것에 지불'], ['열심히 한 것에 대한 보상', '보상으로 지불'], ['오래 갖고 가는 가치', '오래 가는 가치에 지불']])] }
+  ];
+  var BUDGET = { 3: 1000000, 2: 600000, 1: 300000 };
+
+  /* 카드 사이 관계: [from, to, type, 설명] supports 강화 / requires 전제 / tension 긴장 / moderates 조절 */
+  var RT = { supports: '강화', requires: '전제', tension: '긴장', moderates: '조절' };
+  var REL_C = [
+    ['care', 'quiet', 'supports', '조용함을 깨는 가장 큰 원인이 배려 없음'],
+    ['quiet', 'dim', 'supports', '조용한 곳일수록 은은한 조명과 함께 찾게 됨'],
+    ['quiet', 'tidy', 'supports', '조용한 곳은 대체로 정돈된 곳'],
+    ['quiet', 'recover', 'supports', '조용함은 회복의 조건'],
+    ['quiet', 'culture', 'supports', '미술관과 박물관은 조용한 곳'],
+    ['quiet', 'social', 'tension', '조용함과 사람들과 보내는 시간은 부딪힐 수 있음'],
+    ['read', 'quiet', 'requires', '독서는 조용함이 전제'],
+    ['recover', 'onsen', 'supports', '회복은 온천과 사우나에서 크게 채워짐'],
+    ['onsen', 'tidy', 'requires', '온천과 사우나는 청결이 전제'],
+    ['culture', 'romance', 'supports', '역사 도시와 미술관에 대한 로망'],
+    ['romance', 'novelty', 'supports', '가보지 않은 곳에 대한 끌림이 새로움으로 이어짐'],
+    ['romance', 'value', 'tension', '로망은 비용과 부딪힘'],
+    ['novelty', 'secure', 'tension', '새로움은 재무 안정 지향과 부딪힘'],
+    ['risk', 'novelty', 'supports', '새로움을 좋아하면 위험 감수가 높은 경향'],
+    ['secure', 'risk', 'tension', '안정 지향과 위험 감수는 서로 반대'],
+    ['secure', 'value', 'supports', '재무 안정 지향은 가성비와 같이 움직임'],
+    ['value', 'status', 'moderates', '상징 소비를 가성비가 조절'],
+    ['value', 'pay', 'moderates', '예산 한도가 지불 의사를 조절'],
+    ['status', 'pay', 'supports', '보이는 것에 끌리면 지불 의사가 커짐'],
+    ['pay', 'secure', 'tension', '지불 의사와 재무 안정은 부딪힘'],
+    ['food', 'mild', 'requires', '맛집이어도 간이 세지 않아야 함'],
+    ['food', 'tidy', 'requires', '식당은 청결이 전제'],
+    ['food', 'dim', 'supports', '식당은 조명과 뷰가 있을 때 만족이 큼'],
+    ['cook', 'food', 'supports', '직접 만들기는 맛집 취향의 연장'],
+    ['cook', 'health', 'supports', '직접 만들면 건강 조절이 쉬움'],
+    ['health', 'mild', 'supports', '건강을 위해 순한 맛을 선호'],
+    ['health', 'move', 'supports', '건강을 위한 운동'],
+    ['health', 'food', 'moderates', '건강이 외식 빈도를 조절'],
+    ['move', 'nature', 'supports', '걷기와 산행은 자연에서'],
+    ['nature', 'quiet', 'supports', '자연은 조용함이 높은 곳'],
+    ['nature', 'open', 'supports', '자연은 탁 트인 곳'],
+    ['open', 'home', 'supports', '탁 트인 시야는 주거 선택 기준'],
+    ['home', 'tidy', 'requires', '집은 정돈이 전제'],
+    ['home', 'quiet', 'requires', '집은 조용함이 전제'],
+    ['perf', 'resp', 'requires', '성과 중심 일은 책임이 전제'],
+    ['perf', 'work', 'supports', '자율적으로 일할 수 있으면 계속 일하고 싶음'],
+    ['work', 'secure', 'supports', '일은 현금흐름 안정에 기여'],
+    ['growth', 'read', 'supports', '배움은 책과 콘텐츠로 이어짐'],
+    ['growth', 'culture', 'supports', '배움은 미술·역사·지식으로 이어짐'],
+    ['social', 'care', 'requires', '사람과 함께할 때 배려가 전제'],
+    ['social', 'recover', 'tension', '사람과 오래 있으면 회복이 느려짐']
+  ];
+
+  /* 카드 → 영역 연결 문장 */
+  var REL_D = {
+    quiet: { edu: '소음이 낮은 도서관, 스터디 카페, 소규모 강좌', meal: '칸막이나 룸이 있는 식당, 한가한 시간대', rest: '조용한 층과 객실을 고를 수 있는 숙소', trip: '성수기 단체 관광지 대신 외곽 도시', home: '조용한 동네 중심의 주거 탐색' },
+    dim: { meal: '은은한 조명과 창밖 뷰가 있는 식당', rest: '전망이 좋은 저층 숙소', trip: '야경이나 호수 전망이 있는 곳', work: '채광이 좋은 작업 공간' },
+    tidy: { meal: '청결 후기가 일관된 식당', rest: '관리 상태가 좋은 숙소와 공용시설', home: '정리·수납 중심의 소액 개선' },
+    open: { work: '통창과 낮은 층의 작업 공간', home: '시야가 트인 집 후보', trip: '전망이 열린 숙소' },
+    mild: { meal: '간이 세지 않은 메뉴와 식당', health: '저염 식단 관리', trip: '여행 중 식사 선택 기준' },
+    care: { meal: '단체 손님 비중이 낮은 식당', trip: '소규모 인원 상품, 단체 패키지 제외', social: '정원이 작고 예의가 분명한 모임' },
+    social: { social: '취미 클럽과 소수 모임', meal: '소수 식사 모임', trip: '동행이 있는 소규모 여행' },
+    resp: { work: '목표와 책임이 명확한 일과 협업', social: '약속과 역할이 분명한 모임' },
+    culture: { trip: '미술관과 박물관 중심 도시 여행', edu: '미술·역사 강좌', hobby: '전시와 공연 관람' },
+    onsen: { rest: '온천·사우나 이용권과 스파', trip: '온천 도시 여행', home: '홈 웰니스 용품' },
+    food: { meal: '조건에 맞는 맛집 코스', trip: '여행 중 맛집 선정', hobby: '요리와 미식 취미' },
+    cook: { shop: '요리 장비와 재료', hobby: '요리 클래스', home: '주방 개선' },
+    nature: { trip: '자연 속 걷기 여행', sport: '산책과 걷기 모임', home: '자연 가까운 주거' },
+    move: { sport: '운동 프로그램, 골프·라켓 모임', health: '건강 지표 관리', social: '함께 걷는 모임' },
+    read: { hobby: '독서·영화·공연 구독', edu: '강의와 강연', work: '글쓰기' },
+    romance: { trip: '해외 대도시, 역사 도시, 한 달 살기', meal: '현지 맛집 코스' },
+    novelty: { hobby: '새 취미 체험', trip: '처음 가는 도시', edu: '새로운 분야 배움' },
+    recover: { rest: '온천, 스파, 조용한 숙박', hobby: '혼자 보는 영화와 카페', health: '수면 루틴' },
+    status: { shop: '시기를 정해 사는 상징 소비', car: '차량 선택과 구독', trip: '프리미엄 숙소 경험' },
+    growth: { edu: '강좌, 자격, 학위', work: '일에서의 성장 과정', hobby: '독서와 글쓰기' },
+    perf: { work: '성과 중심의 자유로운 일', home: '일과 생활이 섞이는 공간' },
+    home: { home: '주거지 탐색과 개선', shop: '집 꾸미기' },
+    work: { work: '자문, 강의, 시간제 일, 창업 준비', social: '봉사와 멘토링' },
+    value: { shop: '가성비 비교와 구매 시기 정하기', trip: '비수기와 일정 조절', car: '소유 대신 구독·렌트 비교' },
+    health: { health: '식단·수면·생활 습관', med: '정기검진과 상담', meal: '건강을 고려한 식사' },
+    secure: { med: '의료비 대비', home: '주거 안정', work: '고정 수입 확보' },
+    risk: { work: '창업과 새 일', hobby: '새로운 시도' },
+    pay: { trip: '지불 의사가 큰 영역에 예산을 먼저 배분', shop: '한도를 정한 상징 소비', meal: '아깝지 않은 영역은 등급을 올림' }
+  };
+
+  var TYPES = {
+    immerse: { n: '조용한 몰입형', d: '조용한 곳에서 책, 작업, 사색에 깊이 빠지는 은퇴' },
+    culture: { n: '문화 탐방형', d: '미술관과 역사 도시를 다니며 지식과 로망을 채우는 은퇴' },
+    wellness: { n: '회복·웰니스형', d: '온천, 수면, 운동으로 몸과 마음을 가꾸는 은퇴' },
+    prudent: { n: '실속 설계형', d: '쓸 곳을 정하고 여유 안에서 알차게 누리는 은퇴' },
+    social: { n: '관계 중심형', d: '소수의 사람과 모임, 함께하는 시간이 중심인 은퇴' },
+    active: { n: '활동·성장형', d: '일하고 배우고 움직이며 계속 새로운 것을 하는 은퇴' }
+  };
+  var W = {
+    quiet: { immerse: 1 }, dim: { immerse: .5, culture: .3 }, tidy: { immerse: .3 }, open: { immerse: .2, active: .2 }, mild: { wellness: .3 },
+    care: { immerse: .7 }, social: { social: 1, active: .3 }, resp: { active: .3 },
+    culture: { culture: 1, immerse: .4 }, onsen: { wellness: 1 }, food: { social: .3, culture: .3 }, cook: { wellness: .3, prudent: .2 },
+    nature: { wellness: .4, active: .3 }, move: { wellness: .8, active: .8 }, read: { immerse: .6, culture: .3 },
+    romance: { culture: .8 }, novelty: { culture: .5, active: .7 }, recover: { wellness: .8, immerse: .3 }, status: {}, growth: { culture: .4, active: .6 },
+    perf: { active: .3 }, home: { immerse: .2 }, work: { active: .7, social: .3 },
+    value: { prudent: 1 }, health: { wellness: .7, prudent: .3 }, secure: { prudent: .8 }, risk: { active: .6 }, pay: { prudent: .3 }
+  };
+
+  /* 상품 카탈로그: [영역, 이름, 월 비용(만원), 필요한 카드(강도 2 이상), 충돌 카드(강도 3)] */
+  var CAT = [
+    ['shop', '독서 환경 용품(조명, 헤드폰)', 10, ['read', 'quiet'], []],
+    ['shop', '가성비 비교 구독', 3, ['value', 'secure'], []],
+    ['shop', '시기를 정해 사는 프리미엄 소품 적립', 20, ['status', 'pay'], ['value']],
+    ['shop', '요리 장비와 재료 정기 구매', 15, ['cook', 'food'], []],
+    ['trip', '조용한 외곽 도시 2박, 연 3회', 40, ['quiet', 'culture', 'romance'], ['social']],
+    ['trip', '미술관 도시 여행, 연 3회', 50, ['culture', 'romance', 'novelty'], []],
+    ['trip', '온천 도시 여행, 연 4회', 55, ['onsen', 'recover'], []],
+    ['trip', '소규모 동행 여행, 연 3회', 45, ['social', 'novelty'], []],
+    ['trip', '비수기 국내 여행, 연 4회', 25, ['value', 'nature'], []],
+    ['trip', '자연 속 걷기 여행, 연 3회', 30, ['nature', 'move'], []],
+    ['trip', '대규모 단체 패키지, 연 2회', 35, ['social'], ['quiet', 'care']],
+    ['meal', '룸·창가 식당 월 2회', 25, ['dim', 'quiet', 'food'], []],
+    ['meal', '지역 맛집 코스 월 2회', 30, ['food', 'romance'], []],
+    ['meal', '집에서 하는 철판·구이 재료와 장비', 20, ['cook', 'food'], []],
+    ['meal', '저염 식단 월 구독', 30, ['mild', 'health'], []],
+    ['meal', '모임 식사 월 3회', 40, ['social', 'food'], ['quiet']],
+    ['edu', '소규모 인문 강좌 구독', 10, ['growth', 'read', 'quiet'], []],
+    ['edu', '미술·역사 강좌', 12, ['culture', 'growth'], []],
+    ['edu', '무료·저가 평생교육', 3, ['value', 'growth'], []],
+    ['edu', '자격·학위 과정', 30, ['growth', 'work'], []],
+    ['rest', '온천·사우나 정기권', 12, ['onsen', 'recover'], []],
+    ['rest', '조용한 층 숙박권', 15, ['quiet', 'dim'], []],
+    ['rest', '동네 사우나 정기권', 6, ['onsen', 'value'], []],
+    ['rest', '스파·마사지 월 1회', 15, ['recover', 'pay'], []],
+    ['hobby', '영화·공연 구독', 8, ['read', 'recover'], []],
+    ['hobby', '요리 클래스', 12, ['cook', 'novelty'], []],
+    ['hobby', '글쓰기 모임', 6, ['read', 'growth'], []],
+    ['hobby', '사진·산책 취미 키트', 8, ['nature', 'novelty'], []],
+    ['sport', '걷기 모임', 3, ['move', 'nature', 'social'], []],
+    ['sport', '골프 라운딩 모임', 30, ['move', 'social', 'status'], []],
+    ['sport', '테니스·피클볼 클럽', 8, ['move', 'social'], []],
+    ['sport', '수영·헬스 정기권', 8, ['move', 'health'], []],
+    ['sport', '개인 코칭 운동 프로그램', 20, ['move', 'health', 'pay'], []],
+    ['sport', '조용한 요가·필라테스', 10, ['move', 'quiet', 'recover'], []],
+    ['health', '저염 식단 코칭', 15, ['health', 'mild'], []],
+    ['health', '수면 루틴 프로그램', 8, ['health', 'recover'], []],
+    ['health', '건강 데이터 관리 앱', 3, ['health', 'secure'], []],
+    ['med', '정기 건강검진 패키지', 8, ['health', 'secure'], []],
+    ['med', '의료비 대비 보험 점검(제휴)', 5, ['secure', 'health'], []],
+    ['med', '전문의 상담 연결(제휴)', 10, ['health'], []],
+    ['home', '조용한 동네 거주지 탐색', 5, ['home', 'quiet'], []],
+    ['home', '집 정리와 소액 인테리어 개선', 15, ['home', 'tidy'], []],
+    ['home', '홈 웰니스 용품', 10, ['onsen', 'home'], []],
+    ['home', '통창·저층 주거 후보 탐색', 5, ['open', 'home'], []],
+    ['social', '취미 클럽 회비', 8, ['social', 'novelty'], []],
+    ['social', '소수 식사 모임', 20, ['social', 'care'], []],
+    ['social', '같이 걷는 모임', 3, ['social', 'move'], []],
+    ['work', '시간제 전문 일 연결(수입 기대)', 0, ['work', 'perf'], []],
+    ['work', '소규모 창업 준비 과정', 15, ['work', 'risk'], []],
+    ['work', '봉사·멘토링 활동', 0, ['work', 'social'], []],
+    ['car', '차량 유지비 점검과 렌트·구독 비교', 10, ['status', 'value'], []],
+    ['car', '프리미엄 차량 구독', 60, ['status', 'pay'], ['value']],
+    ['car', '대중교통·도보 중심 이동 패스', 5, ['value', 'nature'], []]
+  ];
+  var DOMCARDS = {
+    shop: ['value', 'status', 'read', 'cook'], trip: ['romance', 'novelty', 'culture', 'nature', 'quiet'], meal: ['food', 'cook', 'mild', 'dim', 'tidy'],
+    edu: ['growth', 'read', 'culture'], rest: ['recover', 'onsen', 'quiet'], hobby: ['read', 'culture', 'cook', 'novelty'], sport: ['move', 'nature', 'health'],
+    health: ['health', 'recover', 'mild'], med: ['health', 'secure'], home: ['home', 'open', 'quiet', 'tidy'], social: ['social', 'care'],
+    work: ['work', 'perf', 'resp', 'growth'], car: ['status', 'home', 'move']
+  };
+  var DESC = { shop: '살 것과 사는 때', trip: '도시와 숙소', meal: '조건에 맞는 식당과 식사', edu: '배우고 모이는 곳', rest: '쉬고 회복하는 시설', hobby: '혼자 즐기는 콘텐츠와 취미', sport: '몸을 움직이는 활동', health: '식단, 수면, 생활 습관', med: '검진과 의료(제휴)', home: '사는 곳과 생활공간', social: '사람과 모임', work: '일과 사회참여', car: '이동 수단' };
+
+  function $(s) { return document.querySelector(s); }
+  function m(n) { n = Math.round(n); var a = Math.abs(n); return (n < 0 ? '-' : '') + (a >= 10000 ? (a / 10000).toFixed(a >= 100000 ? 0 : 1).replace(/\.0$/, '') + '억원' : a.toLocaleString('ko-KR') + '만원'); }
+  function won(n) { return Math.round(n).toLocaleString('ko-KR') + '원'; }
+
+  var KEY = 'taste-flow-v4';
+  function fresh() { return { ans: {}, prov: {}, sc: { i: 0, pick: {}, fu: {}, ask: null }, s1: 'scene', hh: { on: false, act: 0, view: null, st: [null, null] }, pk: {}, pf: 'all', pv: 'pick', cm: null, step: 0, open: 'quiet', type: null, picked: {}, paid: false, mode: 'all', relc: {}, cf: { nps: 100, pri: 60, div: 90, bond: 30, rent: 20, house: 0, basic: 0, etc: 0, age: 62, base: 250 }, sat: null, want: 400, other: 3000, padd: 30, dadd: 30, radd: 30, nshift: 2, elig: null, plan: { pri: 0, fin: 0, rent: 0, etc: 0 }, log: [], trk: { cOv: null, tOv: null, xOv: null, split: false, home: 0, food: 0, med: 0, etc: 0 }, sim: { age: 62, end: 90,
+      props: [{ t: '아파트', val: 60000, rent: 0, live: true }, { t: '상가', val: 20000, rent: 60, live: false }],
+      fin: { pen: 15000, pdet: false, irp: 5000, fund: 7000, dc: 3000, penStart: 62, penY: 20, yPen: 3, stock: 15000, yStock: 3.5, divMode: 'rate', divAmt: 500, bond: 15000, yBond: 3.5, isa: 3000, yIsa: 3.5, cash: 5000, yCash: 3 },
+      etc: { npsAge: 65, nps: 100, houseAge: 65, house: 0, oth: 0, othEnd: 65 } } }; }
+  var S = fresh();
+  var o0 = null;
+  try { var raw = localStorage.getItem(KEY); if (raw) { var o = JSON.parse(raw); o0 = o; if (o && o.ans) { S = Object.assign(fresh(), o); S.cf = Object.assign(fresh().cf, o.cf || {}); S.plan = Object.assign(fresh().plan, o.plan || {}); S.trk = Object.assign(fresh().trk, o.trk || {}); S.sim = (o.sim && o.sim.props) ? { age: o.sim.age, end: o.sim.end, props: o.sim.props, fin: Object.assign(fresh().sim.fin, o.sim.fin || {}), etc: Object.assign(fresh().sim.etc, o.sim.etc || {}) } : fresh().sim; } } } catch (e) { }
+  if (['all', 'taste', 'spend', 'flow', 'sim'].indexOf(S.mode) < 0) S.mode = S.mode === 'paid' ? 'flow' : S.mode === 'free' ? 'taste' : 'all';
+  if (!S.sc || !S.sc.pick) S.sc = { i: 0, pick: {}, fu: {}, ask: null }; if (!S.sc.fu) S.sc.fu = {}; if (!S.prov) S.prov = {};
+  if (S.ans && Object.keys(S.ans).length && !(o0 && o0.s1)) S.s1 = 'card';
+  if (!S.pk) S.pk = {};
+  if (!S.hh || !S.hh.st) S.hh = { on: false, act: 0, view: null, st: [null, null] };
+  S.hh.st[S.hh.act] = { cf: S.cf, sim: S.sim, other: S.other, padd: S.padd, dadd: S.dadd, radd: S.radd, nshift: S.nshift };
+  function save() { try { snap(); localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
+
+  function cardById(id) { return CARDS.filter(function (c) { return c.id === id; })[0]; }
+  function neighbors(id) {
+    var out = [];
+    REL_C.forEach(function (r) { var o = r[0] === id ? r[1] : r[1] === id ? r[0] : null; if (o && out.indexOf(o) < 0) out.push(o); });
+    return out.slice(0, 4);
+  }
+  function done(c) { var a = S.ans[c.id]; return !!a && a[0] != null && a[1] != null && a[2] != null && a[3] != null; }
+  function doneList() { return CARDS.filter(done); }
+  function intensity(c) { return c.q[0][1][S.ans[c.id][0]][1]; }
+  function focus(c) { return c.q[1][1][S.ans[c.id][1]][1]; }
+  function nuance(c) { return c.q[2][1][S.ans[c.id][2]][1]; }
+  function linked(c) { var n = neighbors(c.id), i = S.ans[c.id][3]; return i < n.length ? n[i] : null; }
+  function level(id) { var c = cardById(id); return c && done(c) ? intensity(c) : 0; }
+  function scores() {
+    var sc = {}; Object.keys(TYPES).forEach(function (k) { sc[k] = 0; });
+    doneList().forEach(function (c) {
+      var w = W[c.id] || {}, v = intensity(c);
+      for (var k in w) sc[k] += w[k] * v;
+      if (c.id === 'social' && v === 1) sc.immerse += 1;
+    });
+    return sc;
+  }
+  function bestType() { var sc = scores(), b = null; Object.keys(sc).forEach(function (k) { if (b === null || sc[k] > sc[b]) b = k; }); return doneList().length ? b : null; }
+  function curType() { return S.type || bestType(); }
+
+  /* relations */
+  function relRows() {
+    var rows = [];
+    REL_C.forEach(function (r, i) {
+      var a = cardById(r[0]), b = cardById(r[1]);
+      if (!done(a) || !done(b) || S.relc[i] === 'n') return;
+      var st = Math.min(intensity(a), intensity(b));
+      var ul = linked(a) === b.id || linked(b) === a.id;
+      rows.push({ i: i, a: a, b: b, type: r[2], text: r[3], st: st, ul: ul, conf: S.relc[i] === 'y' });
+    });
+    return rows;
+  }
+
+  /* products */
+  function bestFor(d) {
+    var informed = DOMCARDS[d].some(function (id) { return level(id) > 0; });
+    if (!informed) return { missing: true };
+    var cands = [], conf = [];
+    CAT.forEach(function (it) {
+      if (it[0] !== d) return;
+      var matched = it[3].filter(function (id) { return level(id) >= 2; });
+      var bad = it[4].filter(function (id) { return level(id) === 3; });
+      var fit = matched.length / it[3].length;
+      if (bad.length) { if (fit > 0) conf.push({ it: it, bad: bad }); return; }
+      if (fit > 0) cands.push({ it: it, fit: fit, matched: matched });
+    });
+    cands.sort(function (a, b) { return b.fit - a.fit || b.it[3].length - a.it[3].length; });
+    return { best: cands[0] || null, others: cands.slice(1, 3), conf: conf };
+  }
+  function pkItems() { var r = []; CAT.forEach(function (it) { if (S.pk[it[1]]) r.push(it); }); return r; }
+  function sumPicked() { return spendSplit().avg; }
+  function pickedCount() { return pkItems().length; }
+  function pickedItems() { return pkItems().map(function (it) { var p = plan(it[1]), t = todayS(), a = p.k === 'm' ? p.amt : 0; if (p.k === 'o') planPays(t, addM(t, 12)).forEach(function (x) { if (x.n === it[1]) a += x.a / 12; }); return [DOM[it[0]] + ' · ' + it[1] + (p.k === 'm' ? ' (정기)' : ' (일회성)'), a]; }); }
+  var NEWD = { '골프 라운딩 모임': 1, '테니스·피클볼 클럽': 2 };
+  function daysAgo(it, i) { return NEWD[it[1]] != null ? NEWD[it[1]] : (i * 13 + 5) % 45; }
+  function feed() {
+    var out = [], miss = [], conf = [];
+    DKEYS.forEach(function (d) { if (!DOMCARDS[d].some(function (id) { return level(id) > 0; })) miss.push(d); });
+    CAT.forEach(function (it, i) {
+      if (miss.indexOf(it[0]) >= 0) return;
+      var matched = it[3].filter(function (id) { return level(id) >= 2; }), bad = it[4].filter(function (id) { return level(id) === 3; }), fit = matched.length / it[3].length;
+      if (fit <= 0) return;
+      if (bad.length) { conf.push({ it: it, bad: bad }); return; }
+      out.push({ i: i, it: it, fit: fit, matched: matched, days: daysAgo(it, i) });
+    });
+    return { out: out, miss: miss, conf: conf };
+  }
+  /* header */
+  var STEPS = [['1 취향찾기 카드', '질문에 답하기'], ['2 취향 관계', '취향끼리의 관계'], ['3 은퇴 유형', '추천과 선택'], ['4 소비 추천', '13개 영역'], ['5 현금흐름 진단', '구조와 만족도'], ['6 가이드', '활용 또는 보완'], ['7 계획·Tracking', '목표와 기록'], ['8 자산 시뮬레이션', '부동산·금융·기타']];
+  var MODS = [
+    { k: 'taste', n: '취향 찾기', d: '카드로 취향과 은퇴 유형 확인', steps: [0, 1, 2], paid: false },
+    { k: 'spend', n: '취향 소비', d: '취향에 맞는 서비스와 상품', steps: [3], paid: false },
+    { k: 'flow', n: '현금흐름 설계', d: '만족 여부별 가이드와 계획', steps: [4, 5, 6], paid: true },
+    { k: 'sim', n: '자산 시뮬레이션', d: '부동산·금융자산·기타로 예상', steps: [7], paid: true }
+  ];
+  function modOf(k) { return MODS.filter(function (m) { return m.k === k; })[0]; }
+  function md(k) { return S.mode === 'all' ? '' : k; }
+  function setMode(k, step) {
+    S.mode = k;
+    if (k !== 'all') { var m0 = modOf(k); if (m0.paid) S.paid = true; if (step == null && m0.steps.indexOf(S.step) < 0) step = m0.steps[0]; }
+    if (step != null) S.step = step;
+  }
+  function head() {
+    var n = doneList().length;
+    function btn(i) { return '<button data-s="' + i + '"' + (S.step === i ? ' aria-current="step"' : '') + '><b>' + STEPS[i][0] + '</b><span>' + STEPS[i][1] + '</span></button>'; }
+    var mh = '<div class="grp" style="flex-basis:100%"><div class="small muted">서비스 선택 <span class="muted">(각 서비스는 따로 써도 됩니다)</span></div><div class="gb" style="--n:5"><button data-mode="all"' + (S.mode === 'all' ? ' aria-current="step"' : '') + '><b>전체 흐름</b><span>차례대로 모두</span></button>' + MODS.map(function (x) { return '<button data-mode="' + x.k + '"' + (S.mode === x.k ? ' aria-current="step"' : '') + '><b>' + x.n + '</b><span>' + x.d + '</span></button>'; }).join('') + '</div></div>';
+    var gh = MODS.filter(function (x) { return S.mode === 'all' || S.mode === x.k; }).map(function (x) {
+      return '<div class="grp"><div><span class="tag ' + (x.paid ? 'as">유료' : 'ok">무료') + '</span> <span class="small muted">' + x.n + '</span></div><div class="gb" style="--n:' + x.steps.length + '">' + x.steps.map(btn).join('') + '</div></div>';
+    }).join('');
+    $('#steps').innerHTML = mh + gh;
+    document.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.mode); save(); render(); }); });
+    $('#pg').style.width = Math.round(n / CARDS.length * 100) + '%';
+    var pv = provCount(); $('#pgt').textContent = (n - pv) + ' / ' + CARDS.length + '장 확정' + (pv ? ' · 잠정 ' + pv + '장(장면)' : '');
+    document.querySelectorAll('#steps button[data-s]').forEach(function (b) { b.addEventListener('click', function () { S.step = +b.dataset.s; save(); render(); }); });
+  }
+  function navBtns(prev, next, label, nextMd, prevMd, prevLabel) {
+    return '<div class="nav"><div>' + (prev != null ? '<button class="btn" data-go="' + prev + '"' + (prevMd ? ' data-md="' + prevMd + '"' : '') + '>' + (prevLabel || '이전 단계') + '</button>' : '') + '</div><div>' + (next != null ? '<button class="btn primary" data-go="' + next + '"' + (nextMd ? ' data-md="' + nextMd + '"' : '') + '>' + (label || '다음 단계') + '</button>' : '') + '</div></div>';
+  }
+  function bindNav() { document.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.md) setMode(b.dataset.md, +b.dataset.go); else S.step = +b.dataset.go; save(); render(); window.scrollTo({ top: 0 }); }); }); }
+
+  /* ---------- 장면 고르기 ---------- */
+  var PAL = [['#d8eef3', '#78b4c8'], ['#2c3a68', '#6b5bd0'], ['#f8dcae', '#e8955a'], ['#e9e3d6', '#b8ab95'], ['#d6edd2', '#79bb84'], ['#f6d3da', '#d8808e'], ['#d8dfe8', '#8196ae']];
+  var GL = {
+    golf: '<path d="M0 62Q40 44 120 58V80H0z" class="w2"/><path d="M0 70Q50 56 120 68V80H0z" class="w"/><path d="M84 54V14l18 8-18 8" stroke="#fff" stroke-width="3" fill="#fff" stroke-linejoin="round"/><circle cx="48" cy="50" r="5" class="w"/>',
+    dumbbell: '<rect x="14" y="30" width="10" height="24" rx="3" class="w"/><rect x="26" y="24" width="10" height="36" rx="3" class="w"/><rect x="36" y="38" width="48" height="8" class="w2"/><rect x="84" y="24" width="10" height="36" rx="3" class="w"/><rect x="96" y="30" width="10" height="24" rx="3" class="w"/>',
+    racket: '<ellipse cx="50" cy="34" rx="22" ry="26" fill="none" stroke="#fff" stroke-width="5"/><path d="M38 20l24 28M36 36h28M44 14l12 40" stroke="#fff" stroke-width="2"/><path d="M66 56l22 18" stroke="#fff" stroke-width="7" stroke-linecap="round"/><circle cx="96" cy="26" r="8" class="w"/>',
+    yoga: '<circle cx="60" cy="18" r="8" class="w"/><path d="M60 28v20M60 36L34 24M60 36l26-12M60 48L40 68M60 48l20 20" stroke="#fff" stroke-width="6" stroke-linecap="round" fill="none"/><path d="M14 72h92" stroke="#fff" stroke-width="3" stroke-linecap="round"/>',
+    bike: '<circle cx="32" cy="56" r="16" fill="none" stroke="#fff" stroke-width="5"/><circle cx="88" cy="56" r="16" fill="none" stroke="#fff" stroke-width="5"/><path d="M32 56l18-26h26l12 26M50 30l16 26h-34M44 24h14" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    lake: '<circle cx="88" cy="22" r="9" class="w"/><path d="M0 60L32 28 58 52 78 36 120 64V80H0z" class="d"/><path d="M0 62h120v18H0z" class="w2"/><path d="M14 68h30M60 72h40" stroke="#fff" stroke-width="2" stroke-linecap="round"/>',
+    city: '<g class="d"><rect x="8" y="34" width="16" height="46"/><rect x="28" y="20" width="18" height="60"/><rect x="50" y="40" width="14" height="40"/><rect x="68" y="26" width="20" height="54"/><rect x="92" y="44" width="20" height="36"/></g><g class="w"><rect x="12" y="42" width="3" height="3"/><rect x="18" y="52" width="3" height="3"/><rect x="33" y="30" width="3" height="3"/><rect x="39" y="44" width="3" height="3"/><rect x="73" y="36" width="3" height="3"/><rect x="80" y="50" width="3" height="3"/><rect x="97" y="54" width="3" height="3"/><circle cx="102" cy="14" r="6"/></g>',
+    market: '<path d="M10 34h44l-4 12H14z" class="w"/><path d="M66 34h44l-4 12H70z" class="w2"/><rect x="16" y="46" width="32" height="26" class="d"/><rect x="72" y="46" width="32" height="26" class="d"/><circle cx="26" cy="58" r="4" class="w"/><circle cx="38" cy="58" r="4" class="w"/><circle cx="82" cy="58" r="4" class="w"/><circle cx="94" cy="58" r="4" class="w"/>',
+    museum: '<path d="M20 34L60 12l40 22z" class="w"/><g class="w"><rect x="26" y="38" width="8" height="30"/><rect x="44" y="38" width="8" height="30"/><rect x="68" y="38" width="8" height="30"/><rect x="86" y="38" width="8" height="30"/></g><rect x="18" y="68" width="84" height="6" class="w"/>',
+    steam: '<rect x="14" y="46" width="92" height="26" rx="13" class="w"/><path d="M40 38c-6-6 6-10 0-18M60 38c-6-6 6-10 0-18M80 38c-6-6 6-10 0-18" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    forest: '<g class="w"><path d="M20 18l14 34H6z"/><path d="M48 12l16 40H32z"/><path d="M80 20l14 32H66z"/><path d="M104 28l12 24H92z" class="w2"/></g><rect x="18" y="52" width="4" height="8" class="d"/><rect x="46" y="52" width="4" height="8" class="d"/><rect x="78" y="52" width="4" height="8" class="d"/><path d="M50 80Q60 66 90 62" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>',
+    pot: '<path d="M30 40h60v20a10 10 0 0 1-10 10H40a10 10 0 0 1-10-10z" class="w"/><rect x="90" y="44" width="22" height="6" rx="3" class="w"/><path d="M45 34c-4-6 4-8 0-14M62 34c-4-6 4-8 0-14M78 34c-4-6 4-8 0-14" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    book: '<path d="M14 24Q38 18 58 28v40Q38 58 14 64z" class="w"/><path d="M106 24Q82 18 62 28v40Q82 58 106 64z" class="w2"/><path d="M22 34q16-2 28 4M22 44q16-2 28 4" stroke="#000" stroke-opacity=".25" fill="none" stroke-width="2"/>',
+    globe: '<circle cx="52" cy="42" r="26" class="w"/><ellipse cx="52" cy="42" rx="11" ry="26" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="2"/><path d="M26 42h52" stroke="#000" stroke-opacity=".28" stroke-width="2"/><path d="M84 20l26-8-8 26-6-10z" class="w"/>',
+    town: '<path d="M16 72V44a16 16 0 0 1 32 0v28z" class="w"/><rect x="60" y="26" width="18" height="46" class="d"/><path d="M60 26l9-14 9 14z" class="w"/><rect x="84" y="48" width="24" height="24" class="d"/><rect x="92" y="56" width="8" height="16" class="w"/>',
+    bed: '<rect x="12" y="48" width="96" height="16" rx="3" class="w"/><rect x="12" y="34" width="8" height="38" class="d"/><rect x="26" y="40" width="22" height="10" rx="4" class="d"/><rect x="100" y="44" width="8" height="28" class="d"/>',
+    group: '<g class="w"><circle cx="34" cy="30" r="8"/><circle cx="60" cy="26" r="8"/><circle cx="86" cy="30" r="8"/><path d="M20 66a14 18 0 0 1 28 0z"/><path d="M46 64a14 18 0 0 1 28 0z"/><path d="M72 66a14 18 0 0 1 28 0z"/></g>',
+    glass: '<path d="M48 18h24l-2 22a10 10 0 0 1-20 0z" class="w"/><rect x="58" y="50" width="4" height="16" class="w"/><rect x="48" y="66" width="24" height="4" rx="2" class="w"/><rect x="88" y="44" width="8" height="24" class="w2"/><path d="M92 32c-5 5-3 8 0 8s5-3 0-8z" class="w"/>',
+    window: '<rect x="22" y="10" width="76" height="60" rx="3" class="w"/><path d="M22 52L48 34 66 48 80 38 98 52v18H22z" class="d"/><path d="M60 10v60M22 38h76" stroke="#fff" stroke-width="2"/>',
+    room: '<g class="w"><rect x="14" y="22" width="34" height="4"/><rect x="14" y="40" width="34" height="4"/></g><rect x="20" y="12" width="8" height="10" class="d"/><rect x="32" y="30" width="8" height="10" class="d"/><rect x="54" y="46" width="52" height="20" rx="6" class="w"/><rect x="54" y="36" width="52" height="14" rx="6" class="w2"/>',
+    houses: '<path d="M10 70V44l16-14 16 14v26z" class="w"/><path d="M50 70V50l14-12 14 12v20z" class="d"/><path d="M86 70V40l14-12 14 12v30z" class="w2"/>',
+    chat: '<rect x="14" y="14" width="58" height="28" rx="10" class="w"/><path d="M24 42l-4 12 16-12z" class="w"/><rect x="48" y="40" width="58" height="28" rx="10" class="w2"/>',
+    desk: '<rect x="30" y="16" width="60" height="38" rx="3" class="w"/><path d="M16 60h88l-6 10H22z" class="d"/><path d="M38 46l12-10 10 6 16-16" stroke="#000" stroke-opacity=".3" fill="none" stroke-width="3" stroke-linecap="round"/>',
+    board: '<rect x="14" y="12" width="92" height="46" rx="3" class="w"/><path d="M26 26h40M26 36h56M26 46h30" stroke="#000" stroke-opacity=".28" stroke-width="3" stroke-linecap="round"/><rect x="56" y="60" width="8" height="12" class="w"/>',
+    sofa: '<rect x="22" y="40" width="76" height="24" rx="8" class="w"/><rect x="12" y="32" width="18" height="34" rx="8" class="w2"/><rect x="90" y="32" width="18" height="34" rx="8" class="w2"/>',
+    watch: '<rect x="48" y="6" width="24" height="16" class="w2"/><rect x="48" y="58" width="24" height="16" class="w2"/><circle cx="60" cy="40" r="20" class="w"/><path d="M60 28v13l9 5" stroke="#000" stroke-opacity=".3" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    car: '<path d="M10 58L24 38h56l22 14v12H10z" class="w"/><circle cx="34" cy="64" r="8" class="d"/><circle cx="84" cy="64" r="8" class="d"/><path d="M30 42h24v10H24z" class="d"/>',
+    gem: '<path d="M34 24h52l16 18-42 34L18 42z" class="w"/><path d="M18 42h84M44 24l16 52 16-52" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="2"/>',
+    heart: '<path d="M60 70C30 50 24 30 38 22c8-4 18 0 22 8 4-8 14-12 22-8 14 8 8 28-22 48z" class="w"/><path d="M12 44h28l6-12 8 22 6-10h48" stroke="#000" stroke-opacity=".3" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    coin: '<g class="w"><ellipse cx="42" cy="62" rx="22" ry="7"/><ellipse cx="42" cy="54" rx="22" ry="7"/><ellipse cx="42" cy="46" rx="22" ry="7"/></g><ellipse cx="86" cy="62" rx="18" ry="6" class="w2"/><ellipse cx="86" cy="54" rx="18" ry="6" class="w2"/>',
+    shield: '<path d="M60 8l34 10v26c0 16-14 26-34 32C40 70 26 60 26 44V18z" class="w"/><path d="M46 42l10 10 18-20" stroke="#000" stroke-opacity=".3" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    chartup: '<path d="M14 68h92" stroke="#fff" stroke-width="3"/><path d="M20 58l22-16 16 10 38-32" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M82 16h14v14" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    scale: '<path d="M60 12v54M30 68h60M24 26h72" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M14 46l10-20 10 20a10 6 0 0 1-20 0zM86 46l10-20 10 20a10 6 0 0 1-20 0z" class="w"/>',
+    smile: '<circle cx="60" cy="40" r="28" class="w"/><circle cx="50" cy="34" r="3.5" fill="#000" fill-opacity=".3"/><circle cx="70" cy="34" r="3.5" fill="#000" fill-opacity=".3"/><path d="M46 48q14 14 28 0" stroke="#000" stroke-opacity=".3" fill="none" stroke-width="4" stroke-linecap="round"/>',
+    stop: '<circle cx="60" cy="40" r="26" fill="none" stroke="#fff" stroke-width="7"/><path d="M42 58L78 22" stroke="#fff" stroke-width="7" stroke-linecap="round"/>',
+    check: '<rect x="30" y="12" width="60" height="56" rx="6" class="w"/><path d="M40 30l6 6 10-12M40 54l6 6 10-12" stroke="#000" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M66 32h14M66 56h14" stroke="#000" stroke-opacity=".3" stroke-width="4" stroke-linecap="round"/>'
+  };
+  function art(g, p) {
+    return '<span class="sart" style="background:linear-gradient(160deg,' + PAL[p][0] + ',' + PAL[p][1] + ')"><svg viewBox="0 0 120 80" aria-hidden="true" focusable="false">' + GL[g] + '</svg></span>';
+  }
+  /* o: [이름, 보조설명, 그림, 색, 연결 카드(첫 번째가 가장 강함), 영역] */
+  var SCENES = [
+    { id: 's1', q: '쉬는 주말, 어디에 있고 싶으세요?', o: [['호숫가의 조용한 숙소', '물소리와 고요', 'lake', 0, ['quiet', 'nature', 'recover'], 'rest'], ['도심 야경이 보이는 곳', '불빛과 탁 트인 전망', 'city', 1, ['dim', 'open'], 'meal'], ['시장 골목 맛집 거리', '북적임과 먹는 재미', 'market', 2, ['food', 'social'], 'meal'], ['미술관·박물관', '보고 배우는 하루', 'museum', 3, ['culture', 'read'], 'trip']] },
+    { id: 's2', q: '몸과 마음이 지칠 때 하고 싶은 것은요?', o: [['온천·사우나', '몸을 데우며 쉬기', 'steam', 5, ['onsen', 'recover'], 'rest'], ['숲길 걷기', '가벼운 산책', 'forest', 4, ['nature', 'move'], 'sport'], ['직접 만든 한 끼', '집에서 요리', 'pot', 2, ['cook', 'mild'], 'home'], ['카페에서 책 한 권', '조용한 오후', 'book', 3, ['read', 'quiet'], 'hobby']] },
+    { id: 'sx', q: '몸을 움직인다면 어떤 활동이 끌리세요?', o: [['골프', '라운딩과 사교', 'golf', 4, ['move', 'social'], 'sport', ['move', '골프 라운딩']], ['수영·헬스', '정기적으로 몸 만들기', 'dumbbell', 6, ['move', 'health'], 'sport'], ['등산·걷기', '자연 속에서', 'forest', 4, ['nature', 'move'], 'sport'], ['테니스·피클볼', '함께하는 구기 운동', 'racket', 2, ['move', 'social'], 'sport', ['move', '구기·라켓 운동']], ['요가·필라테스', '조용하게 몸 풀기', 'yoga', 5, ['health', 'recover'], 'health'], ['자전거·러닝', '혼자 달리기', 'bike', 0, ['move', 'nature'], 'sport']] },
+    { id: 's3', q: '가고 싶은 여행은요?', o: [['처음 가보는 해외 대도시', '로망과 새로움', 'globe', 0, ['romance', 'novelty'], 'trip'], ['오래된 역사 도시 걷기', '이야기가 있는 곳', 'town', 3, ['culture', 'romance'], 'trip'], ['늘 가던 편안한 숙소', '깔끔하고 익숙한 곳', 'bed', 6, ['tidy'], 'rest'], ['마음 맞는 사람들과 동행', '함께하는 여행', 'group', 5, ['social'], 'trip']] },
+    { id: 's4', q: '마음에 드는 식사 자리는요?', o: [['간이 약한 건강한 한 상', '속 편한 식사', 'heart', 4, ['mild', 'health'], 'meal'], ['분위기 좋은 레스토랑', '조명과 뷰', 'glass', 1, ['dim', 'food', 'status'], 'meal'], ['조용해서 대화가 되는 식당', '소리가 거슬리지 않게', 'chat', 6, ['quiet', 'care'], 'meal'], ['철판·구이를 직접', '요리하며 즐기기', 'pot', 5, ['cook', 'food'], 'meal']] },
+    { id: 's5', q: '내가 사는 공간은 어때야 하나요?', o: [['통창으로 탁 트인 거실', '밝고 시원한 전망', 'window', 0, ['open'], 'home'], ['정돈된 깔끔한 방', '물건이 제자리에', 'room', 3, ['tidy'], 'home'], ['조용한 동네의 집', '이웃도 조용하게', 'houses', 4, ['home', 'quiet'], 'home'], ['도심 접근성 좋은 집', '나가면 바로 도시', 'city', 6, ['home'], 'home']] },
+    { id: 's6', q: '사람들과 어떻게 지내고 싶으세요?', o: [['소수와 깊은 대화', '마음 맞는 한두 명', 'chat', 5, ['social'], 'meal'], ['취미·운동 동호회', '함께 움직이기', 'group', 2, ['social', 'move'], 'social'], ['혼자만의 시간', '아무도 없는 편안함', 'sofa', 6, ['recover', 'quiet'], 'rest'], ['새로 배우는 소규모 수업', '배우는 즐거움', 'board', 0, ['growth', 'novelty'], 'edu']] },
+    { id: 's7', q: '은퇴 후 일은 어떻게 하고 싶으세요?', o: [['자문·강의로 전문성 살리기', '내 경험을 나누기', 'board', 1, ['work', 'growth'], 'work'], ['성과로 평가받는 프로젝트', '목표와 책임이 분명하게', 'desk', 6, ['perf', 'resp'], 'work'], ['가볍게 시간제로', '부담 없는 일', 'watch', 2, ['work'], 'work'], ['일 없이 쉬기', '이제는 쉬고 싶다', 'sofa', 4, ['recover'], 'rest']] },
+    { id: 's8', q: '눈이 가는 물건은요?', o: [['명품 시계·자동차', '보이는 가치', 'car', 1, ['status'], 'car'], ['장인이 오래 만든 물건', '오래 쓰는 값어치', 'gem', 2, ['pay', 'value'], 'shop'], ['건강 관리 프로그램', '몸을 관리받기', 'heart', 4, ['health', 'move'], 'health'], ['꼭 필요한 것만', '실속 있게', 'scale', 6, ['value'], 'shop']] },
+    { id: 's9', q: '돈 앞에서 나는 어느 쪽에 가깝나요?', o: [['고정 수입이 있어야 마음이 편해요', '안정이 먼저', 'shield', 6, ['secure'], 'shop'], ['어느 정도 손실은 감수할 수 있어요', '수익도 중요', 'chartup', 4, ['risk'], 'work'], ['뒷받침이 안 되면 사지 않아요', '쓰기 전에 따져요', 'scale', 3, ['value'], 'shop'], ['좋은 건 먼저 쓰고 봐요', '지금의 즐거움', 'coin', 2, ['pay'], 'trip']] },
+    { id: 's10', q: '이런 말에 고개가 끄덕여지나요?', o: [['배려 없는 사람 때문에 시간을 망친 적이 있어요', '공공장소의 예절', 'stop', 5, ['care'], 'meal'], ['책임 안 지는 사람은 참기 어려워요', '일의 책임', 'check', 6, ['resp'], 'work'], ['건강 때문에 좋아하는 걸 줄여요', '조절하는 편', 'heart', 4, ['health'], 'meal'], ['좋은 경험엔 돈이 아깝지 않아요', '지불 가치', 'smile', 2, ['pay'], 'trip']] }
+  ];
+  /* 서로 어긋나는 선택이 함께 나오면 되묻는 질문. ch: [문구, {카드: 강도}] */
+  var CONFL = [
+    { id: 'c1', a: 'social', b: 'recover', q: '사람들과 어울리는 시간과 혼자 쉬는 시간이 모두 끌리시네요. 평소에는 어느 쪽이 기본인가요?', ch: [['기본은 혼자, 가끔 사람들과', { recover: 3, social: 2 }], ['기본은 사람들과, 가끔 혼자', { social: 3, recover: 2 }], ['번갈아 가며 균형 있게', { social: 2, recover: 2 }]] },
+    { id: 'c2', a: 'secure', b: 'risk', q: '안정과 위험 감수가 모두 마음에 드시네요. 어떤 돈에 어떻게 적용하시나요?', ch: [['생활비는 안정, 여윳돈은 도전', { secure: 3, risk: 2 }], ['전체적으로 안정이 먼저', { secure: 3, risk: 1 }], ['수익 쪽에 더 무게를 둬요', { risk: 3, secure: 2 }]] },
+    { id: 'c3', a: 'novelty', b: 'tidy', q: '새로운 곳과 익숙하고 깔끔한 곳이 모두 끌리시네요. 여행할 때는 어느 쪽이 더 가까운가요?', ch: [['장소는 새롭게, 숙소는 익숙하고 깔끔하게', { novelty: 3, tidy: 3 }], ['대체로 익숙한 쪽이 편해요', { tidy: 3, novelty: 1 }], ['대체로 새로운 쪽이 좋아요', { novelty: 3, tidy: 1 }]] },
+    { id: 'c4', a: 'perf', b: 'recover', q: '성과를 내는 일과 일 없이 쉬는 것이 모두 끌리시네요. 앞으로 몇 년은 어떻게 보내고 싶으세요?', ch: [['처음 몇 년은 일하고, 이후에 쉬어요', { perf: 3, recover: 2 }], ['일은 최소로, 쉬는 것이 중심이에요', { recover: 3, perf: 1 }], ['일이 중심이고 쉬는 건 틈틈이요', { perf: 3, recover: 1 }]] },
+    { id: 'c5', a: 'value', b: 'pay', q: '따져 보고 사는 것과 좋은 건 먼저 쓰는 것이 모두 끌리시네요. 어느 쪽에 가까운가요?', ch: [['평소엔 아끼고, 특별한 경험엔 써요', { value: 2, pay: 3 }], ['대체로 따져 보고 써요', { value: 3, pay: 1 }], ['좋은 것엔 기분 좋게 써요', { pay: 3, value: 1 }]] }
+  ];
+  function bestOf(ids) {
+    var best = {};
+    SCENES.forEach(function (sc) {
+      if (ids && ids.indexOf(sc.id) < 0) return;
+      var pk = S.sc.pick[sc.id]; if (!pk) return;
+      sc.o.forEach(function (o, oi) {
+        var on = pk.indexOf(oi) >= 0;
+        o[4].forEach(function (id, ci) {
+          var v = on ? (ci === 0 ? 3 : 2) : 1;
+          if (!best[id] || v > best[id].v) best[id] = { v: v, d: o[5], n: null };
+          if (on && o[6] && o[6][0] === id) best[id].n = o[6][1];
+        });
+      });
+    });
+    return best;
+  }
+  function nextConf(sid) {
+    var b = bestOf(sid ? [sid] : null);
+    for (var k = 0; k < CONFL.length; k++) {
+      var c = CONFL[k], A = b[c.a], B = b[c.b];
+      if (S.sc.fu[c.id] != null || !A || !B) continue;
+      var th = sid ? 2 : 3;
+      if (A.v >= th && B.v >= th) return c.id;
+    }
+    return null;
+  }
+  function applyScenes() {
+    var best = bestOf(null);
+    CONFL.forEach(function (c) {
+      var k = S.sc.fu[c.id]; if (k == null) return;
+      var ef = c.ch[k][1];
+      Object.keys(ef).forEach(function (id) { if (best[id]) best[id].v = ef[id]; });
+    });
+    Object.keys(best).forEach(function (id) {
+      if (S.ans[id] && !S.prov[id]) return;
+      var c = cardById(id); if (!c) return;
+      var i0 = 0, i1 = 0, i2 = 0;
+      c.q[0][1].forEach(function (o, i) { if (o[1] === best[id].v) i0 = i; });
+      var f1 = false; c.q[1][1].forEach(function (o, i) { if (!f1 && o[1] === best[id].d) { i1 = i; f1 = true; } });
+      if (best[id].n) c.q[2][1].forEach(function (o, i) { if (o[1] === best[id].n) i2 = i; });
+      S.ans[id] = [i0, i1, i2, neighbors(id).length]; S.prov[id] = true;
+    });
+  }
+  function advance() {
+    S.sc.i++;
+    if (S.sc.i >= SCENES.length) { S.sc.ask = nextConf(null); if (!S.sc.ask) applyScenes(); }
+  }
+  function followView() {
+    var c = CONFL.filter(function (x) { return x.id === S.sc.ask; })[0];
+    var h = seg() + '<div class="result" style="border-color:var(--amber)"><b>잠깐, 하나만 더 물어볼게요</b><span>고르신 것 중 <b>' + cardById(c.a).t + '</b>과(와) <b>' + cardById(c.b).t + '</b>이(가) 서로 어긋날 수 있어요.</span></div>';
+    h += '<h2>' + c.q + '</h2><div class="opts fu">';
+    c.ch.forEach(function (x, k) { h += '<button data-fu="' + k + '">' + x[0] + '</button>'; });
+    return h + '</div><p class="small muted">정답은 없습니다. 가까운 쪽을 고르면 두 취향의 강도를 알맞게 조정합니다.</p>';
+  }
+  function provCount() { return Object.keys(S.prov).filter(function (k) { return S.prov[k] && S.ans[k]; }).length; }
+  function seg() {
+    return '<div class="seg" role="group" aria-label="취향 찾는 방법"><button data-s1="scene" aria-pressed="' + (S.s1 === 'scene') + '"><b>장면 고르기</b><span>그림 11장면 · 약 2분</span></button><button data-s1="card" aria-pressed="' + (S.s1 !== 'scene') + '"><b>카드로 자세히</b><span>카드 28장 · 질문 4개씩</span></button></div>';
+  }
+  function sceneView() {
+    if (S.sc.ask) return followView();
+    var i = S.sc.i, h = seg();
+    if (i >= SCENES.length) {
+      var top = CARDS.filter(function (c) { return S.prov[c.id] && S.ans[c.id] && intensity(c) === 3; });
+      h += '<h2>장면 고르기를 마쳤습니다</h2><p class="muted">고른 장면에서 취향을 추정했습니다. 아래 결과는 잠정이며, 더 정확히 하고 싶은 카드만 골라 확정할 수 있습니다. 결(세부 선택)은 기본값으로 채워져 있습니다.</p>';
+      h += '<div class="result"><b>강하게 나온 취향 ' + top.length + '개</b><span>' + (top.map(function (c) { return c.t; }).join(', ') || '뚜렷하게 고른 장면이 없습니다. 장면을 다시 골라 보세요.') + '</span></div>';
+      var bt = bestType();
+      if (bt) h += '<div class="result"><b>가까운 은퇴 유형(잠정): ' + TYPES[bt].n + '</b><span>장면 응답만으로 계산한 값입니다.</span></div>';
+      h += '<div class="row"><button class="btn primary" data-go="2">은퇴 유형 보기</button><button class="btn" data-go="1">취향 관계 보기</button><button class="btn" data-deep="1">강한 취향부터 확정하기</button><button class="btn" data-screst="1">장면 다시 고르기</button></div>';
+      return h;
+    }
+    var sc = SCENES[i], pk = S.sc.pick[sc.id] || [];
+    h += '<div class="row"><b>' + (i + 1) + ' / ' + SCENES.length + '</b><div class="prog" style="flex:1;min-width:120px" aria-hidden="true"><i style="width:' + Math.round(i / SCENES.length * 100) + '%"></i></div></div>';
+    h += '<h2>' + sc.q + '</h2><p class="muted">끌리는 것을 모두 고르세요. 하나도 끌리지 않으면 그대로 다음으로 가도 됩니다.</p>';
+    h += '<div class="scn">';
+    sc.o.forEach(function (o, oi) {
+      h += '<button class="scb" data-scn="' + oi + '" aria-pressed="' + (pk.indexOf(oi) >= 0) + '">' + art(o[2], o[3]) + '<b>' + o[0] + '</b><span>' + o[1] + '</span></button>';
+    });
+    h += '</div><div class="nav"><div>' + (i > 0 ? '<button class="btn" data-scgo="-1">이전 장면</button>' : '') + '</div><div><button class="btn primary" data-scgo="1">' + (pk.length ? (i === SCENES.length - 1 ? '결과 보기' : '다음 장면') : (i === SCENES.length - 1 ? '고른 것 없이 결과 보기' : '끌리는 게 없어요 · 다음')) + '</button></div></div>';
+    return h;
+  }
+  function bindScene() {
+    document.querySelectorAll('[data-s1]').forEach(function (b) { b.addEventListener('click', function () { S.s1 = b.dataset.s1; save(); render(); }); });
+    document.querySelectorAll('[data-scn]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var sc = SCENES[S.sc.i], pk = (S.sc.pick[sc.id] || []).slice(), oi = +b.dataset.scn, k = pk.indexOf(oi);
+        if (k >= 0) pk.splice(k, 1); else pk.push(oi);
+        S.sc.pick[sc.id] = pk; save(); render();
+      });
+    });
+    document.querySelectorAll('[data-scgo]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var sc = SCENES[S.sc.i], d = +b.dataset.scgo;
+        if (d > 0) { if (!S.sc.pick[sc.id]) S.sc.pick[sc.id] = []; S.sc.ask = nextConf(sc.id); if (!S.sc.ask) advance(); }
+        else S.sc.i = Math.max(0, S.sc.i - 1);
+        save(); render(); window.scrollTo({ top: 0 });
+      });
+    });
+    document.querySelectorAll('[data-fu]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        S.sc.fu[S.sc.ask] = +b.dataset.fu;
+        var sid = S.sc.i < SCENES.length ? SCENES[S.sc.i].id : null;
+        S.sc.ask = nextConf(sid);
+        if (!S.sc.ask) { if (sid) advance(); else applyScenes(); }
+        save(); render(); window.scrollTo({ top: 0 });
+      });
+    });
+    var r = $('[data-screst]'); if (r) r.addEventListener('click', function () { S.sc.i = 0; S.sc.fu = {}; S.sc.ask = null; save(); render(); });
+    var dp = $('[data-deep]'); if (dp) dp.addEventListener('click', function () {
+      var t = CARDS.filter(function (c) { return S.prov[c.id] && S.ans[c.id] && intensity(c) === 3; })[0];
+      S.s1 = 'card'; S.open = t ? t.id : S.open; save(); render();
+    });
+  }
+
+  /* step 1 */
+  function step1() {
+    if (S.s1 === 'scene') return sceneView();
+    var n = doneList().length, cats = [];
+    CARDS.forEach(function (c) { if (cats.indexOf(c.cat) < 0) cats.push(c.cat); });
+    var h = seg() + '<h2>카드를 눌러 질문에 답하세요</h2><p class="muted">카드마다 질문 4개입니다. 강도, 중요한 영역, 결을 묻고, 마지막 질문은 이 카드와 가장 가깝게 이어지는 다른 카드를 고르게 합니다. 이 선택이 카드 사이의 관계를 만듭니다.</p>';
+    if (n >= 3) h += '<div class="banner"><b>카드 ' + n + '장 완성</b><span>취향끼리의 관계와 첫 추천을 미리 볼 수 있습니다.</span><button class="btn" data-go="1">취향 관계 보기</button></div>';
+    h += '<div class="banner" style="border-color:var(--k-drive)"><b>첫 대상</b><span>금융자산 5억원 이상, 월 현금흐름 300만원 이상(연금, 배당, 채권, 월세)인 은퇴 전후의 분</span><button class="btn" data-el="y" aria-pressed="' + (S.elig === 'y') + '">해당돼요</button><button class="btn" data-el="n" aria-pressed="' + (S.elig === 'n') + '">아직 아니에요</button>' + (S.elig === 'n' ? '<span class="small muted" style="flex-basis:100%">카드와 상품 추천은 그대로 쓸 수 있고, 유료 구간은 위 조건에 맞춰 설계된 시안입니다.</span>' : '') + '</div>';
+    var ch = '';
+    cats.forEach(function (cat) {
+      ch += '<div class="cat"><div class="lab">' + cat + '</div><div class="cards">';
+      CARDS.filter(function (c) { return c.cat === cat; }).forEach(function (c) {
+        var a = S.ans[c.id];
+        ch += '<button class="card' + (done(c) ? ' done' : '') + '" style="--kc:' + KC[cat] + '" data-c="' + c.id + '" aria-pressed="' + (S.open === c.id) + '"><b>' + c.t + '</b><span class="st">' + (done(c) ? (S.prov[c.id] ? '잠정(장면)' : '완성') : (a ? '진행 중' : '미완성')) + '</span></button>';
+      });
+      if (S.open && CARDS.filter(function (x) { return x.cat === cat && x.id === S.open; }).length) ch += '<!--Q-->';
+      ch += '</div></div>';
+    });
+    var qh = '';
+    var c = cardById(S.open);
+    if (c) {
+      var a = S.ans[c.id] || [null, null, null, null], nb = neighbors(c.id);
+      qh += '<section class="q" aria-label="' + c.t + ' 질문" style="gap:14px"><div class="row"><span class="chip" style="--kc:' + KC[c.cat] + '">' + c.cat + '</span><h3>' + c.t + '</h3></div>';
+      c.q.forEach(function (q, qi) {
+        qh += '<div class="q"><div class="qt">' + (qi + 1) + '. ' + q[0] + '</div><div class="opts">';
+        q[1].forEach(function (o, oi) { qh += '<button data-q="' + qi + '" data-o="' + oi + '" aria-pressed="' + (a[qi] === oi) + '">' + o[0] + '</button>'; });
+        qh += '</div></div>';
+      });
+      qh += '<div class="q"><div class="qt">4. "' + c.t + '"과 가장 가깝게 이어지는 것은 무엇인가요?</div><div class="opts">';
+      nb.forEach(function (id, oi) { qh += '<button data-q="3" data-o="' + oi + '" aria-pressed="' + (a[3] === oi) + '">' + cardById(id).t + '</button>'; });
+      qh += '<button data-q="3" data-o="' + nb.length + '" aria-pressed="' + (a[3] === nb.length) + '">아직 모르겠어요</button></div></div>';
+      if (done(c) && S.prov[c.id]) qh += '<div class="result"><b>장면 고르기로 채운 잠정 답입니다</b><span>위 답을 바꾸거나, 그대로 맞으면 확정하세요.</span><span><button class="btn primary" data-conf="1">이 답으로 확정</button></span></div>';
+      if (done(c)) {
+        var lv = ['', '약함', '보통', '강함'][intensity(c)], ln = linked(c);
+        qh += '<div class="result"><b>완성된 카드: ' + c.t + '</b><span>강도 ' + lv + ' · 중요한 영역 ' + DOM[focus(c)] + ' · ' + nuance(c) + (ln ? ' · 가장 가까운 카드 ' + cardById(ln).t : '') + '</span></div>';
+        var nxt = CARDS.filter(function (x) { return !done(x); })[0];
+        if (nxt) qh += '<div class="row"><button class="btn primary" data-next="' + nxt.id + '">다음 미완성 카드: ' + nxt.t + '</button></div>';
+      }
+      qh += '</section>';
+    }
+    h += '<div class="s1c">' + ch.replace('<!--Q-->', '<div class="qpanel" aria-label="질문">' + qh + '</div>') + '</div>';
+    return h + navBtns(null, 1, '취향 관계 보기');
+  }
+  function placePanel() {
+    var panel = $('.qpanel'); if (!panel) return;
+    var grid = panel.parentNode, cards = grid.querySelectorAll('.card'), idx = -1;
+    cards.forEach(function (c, i) { if (c.dataset.c === S.open) idx = i; });
+    if (idx < 0) return;
+    var cols = getComputedStyle(grid).gridTemplateColumns.split(' ').length, end = Math.min(cards.length, Math.ceil((idx + 1) / cols) * cols);
+    if (end < cards.length) grid.insertBefore(panel, cards[end]); else grid.appendChild(panel);
+  }
+  function bind1() {
+    bindScene();
+    if (S.s1 === 'scene') return;
+    document.querySelectorAll('[data-el]').forEach(function (b) { b.addEventListener('click', function () { S.elig = b.dataset.el; save(); render(); }); });
+    document.querySelectorAll('.card').forEach(function (b) { b.addEventListener('click', function () { S.open = S.open === b.dataset.c ? null : b.dataset.c; save(); render(); }); });
+    placePanel();
+    window.removeEventListener('resize', placePanel); window.addEventListener('resize', placePanel);
+    var qp = $('.qpanel'); if (qp && qp.scrollIntoView && S.scrollQ) { qp.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    S.scrollQ = true;
+    document.querySelectorAll('[data-conf]').forEach(function (b) { b.addEventListener('click', function () { delete S.prov[S.open]; save(); render(); }); });
+    document.querySelectorAll('[data-next]').forEach(function (b) { b.addEventListener('click', function () { S.open = b.dataset.next; save(); render(); }); });
+    document.querySelectorAll('.opts button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var c = cardById(S.open), a = S.ans[c.id] || [null, null, null, null];
+        a[+b.dataset.q] = +b.dataset.o; S.ans[c.id] = a; delete S.prov[c.id]; save(); render();
+      });
+    });
+  }
+
+  /* step 2 */
+  var TC = { supports: 'var(--ok)', requires: 'var(--k-sense)', tension: 'var(--warn)', moderates: 'var(--amber)' };
+  function degrees(rows) { var d = {}; rows.forEach(function (r) { d[r.a.id] = (d[r.a.id] || 0) + 1; d[r.b.id] = (d[r.b.id] || 0) + 1; }); return d; }
+  function topHubs(L, rows) { var d = degrees(rows); return L.filter(function (c) { return (d[c.id] || 0) >= 3; }).sort(function (a, b) { return d[b.id] - d[a.id]; }).slice(0, 5); }
+  function graph(L, rows) {
+    var deg = degrees(rows), hubIds = topHubs(L, rows).map(function (c) { return c.id; });
+    var cx = 320, cy = 270, R = 200, pos = {}, g = '';
+    var ordered = CARDS.filter(done);
+    ordered.forEach(function (c, i) { var ang = -Math.PI / 2 + i * 2 * Math.PI / ordered.length; pos[c.id] = { x: cx + R * Math.cos(ang), y: cy + R * Math.sin(ang), a: ang }; });
+    rows.forEach(function (r) {
+      var p = pos[r.a.id], q = pos[r.b.id];
+      g += '<line x1="' + p.x.toFixed(1) + '" y1="' + p.y.toFixed(1) + '" x2="' + q.x.toFixed(1) + '" y2="' + q.y.toFixed(1) + '" stroke="' + TC[r.type] + '" stroke-width="' + (r.ul || r.conf ? 3 : r.st >= 2 ? 1.6 : 0.8) + '" stroke-opacity="' + (r.st >= 2 || r.ul ? .85 : .4) + '"' + (r.type === 'tension' ? ' stroke-dasharray="5 4"' : '') + '/>';
+    });
+    ordered.forEach(function (c) {
+      var p = pos[c.id], cosv = Math.cos(p.a), anchor = cosv > 0.25 ? 'start' : cosv < -0.25 ? 'end' : 'middle';
+      var lx = cx + (R + 14) * cosv, ly = cy + (R + 14) * Math.sin(p.a) + 4;
+      var hub = hubIds.indexOf(c.id) >= 0;
+      if (hub) g += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="15" fill="none" stroke="var(--fg)" stroke-width="2" stroke-dasharray="3 3"/>';
+      g += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + (hub ? 9 : 6) + '" fill="' + KC[c.cat] + '" stroke="var(--raised)" stroke-width="2"/>';
+      g += '<text x="' + lx.toFixed(1) + '" y="' + ly.toFixed(1) + '" text-anchor="' + anchor + '"' + (hub ? ' font-weight="800" font-size="15"' : '') + '>' + (hub ? '★ ' : '') + c.t + (hub ? ' (' + deg[c.id] + ')' : '') + '</text>';
+    });
+    return '<div class="gwrap"><svg viewBox="0 0 640 540" role="img" aria-label="카드 관계 그래프">' + g + '</svg></div>';
+  }
+  function step2() {
+    var L = doneList(), h = '<h2>카드 사이의 관계</h2>';
+    if (L.length < 2) return h + '<p class="muted">관계는 완성된 카드가 두 장 이상일 때 나타납니다. 지금 ' + L.length + '장입니다.</p>' + navBtns(0, null);
+    var rows = relRows(), cnt = { supports: 0, requires: 0, tension: 0, moderates: 0 };
+    rows.forEach(function (r) { cnt[r.type]++; });
+    h += '<p class="muted">완성된 카드 ' + L.length + '장 사이에 관계 ' + rows.length + '개가 보입니다. 굵은 선은 직접 연결했거나 확인한 관계, 가는 선은 아직 확인하지 않은 후보입니다.</p>';
+    h += '<div class="row">' + Object.keys(RT).map(function (k) { return '<span class="chip" style="--kc:' + TC[k] + '">' + RT[k] + ' ' + cnt[k] + '</span>'; }).join('') + '</div>';
+    var dg = degrees(rows), hubs = topHubs(L, rows);
+    h += '<div class="banner" style="border-color:var(--fg)"><b>★ 나와 가장 관계가 큰 취향</b><span>' + (hubs.length ? hubs.map(function (c) { return '<span class="chip" style="--kc:' + KC[c.cat] + '"><b>' + c.t + '</b> ' + dg[c.id] + '개</span>'; }).join('') + ' <span class="small muted">관계가 3개 이상인 카드 중 가장 많이 이어진 상위 5개(그래프의 ★)입니다. 나를 설명하는 중심 취향입니다.</span>' : '관계가 3개 이상인 카드가 아직 없습니다. 카드를 더 완성하면 나타납니다.') + '</span></div>';
+    h += graph(L, rows);
+    h += '<h3>관계 확인하기</h3><p class="muted small">"아니에요"를 누르면 그 관계는 이 사람에게서 빠집니다.</p><div class="tw"><table><thead><tr><th>관계</th><th>설명</th><th>강도</th><th>확인</th></tr></thead><tbody>';
+    rows.sort(function (a, b) { return (b.ul - a.ul) || (b.st - a.st); });
+    rows.forEach(function (r) {
+      h += '<tr><td><span class="chip" style="--kc:' + TC[r.type] + '">' + RT[r.type] + '</span><br>' + r.a.t + ' → ' + r.b.t + (r.ul ? ' <span class="tag ok">직접 연결</span>' : '') + '</td><td>' + r.text + '</td><td>' + ['', '약함', '보통', '강함'][r.st] + '</td><td><div class="row"><button class="btn' + (r.conf ? ' primary' : '') + '" data-rc="' + r.i + '" data-v="y">맞아요</button><button class="btn" data-rc="' + r.i + '" data-v="n">아니에요</button></div></td></tr>';
+    });
+    h += '</tbody></table></div>';
+    h += '<h3>영역으로 이어지는 연결</h3><div class="tw"><table><thead><tr><th>영역</th><th>연결되는 선택지</th></tr></thead><tbody>';
+    DKEYS.forEach(function (d) {
+      var chips = '';
+      L.forEach(function (c) { var t = REL_D[c.id] && REL_D[c.id][d]; if (!t) return; chips += '<span class="chip" style="--kc:' + KC[c.cat] + '"><b>' + c.t + '</b>&nbsp;' + t + (focus(c) === d ? ' ★' : '') + '</span> '; });
+      h += '<tr><td><b>' + DOM[d] + '</b></td><td>' + (chips || '<span class="muted">연결된 카드가 없습니다. 4단계에서 필요한 카드를 알려 드립니다.</span>') + '</td></tr>';
+    });
+    h += '</tbody></table></div><p class="note">★는 카드에서 "가장 중요한 영역"으로 고른 곳입니다.</p>';
+    return h + navBtns(0, 2, '은퇴 유형 보기');
+  }
+  function bind2() {
+    document.querySelectorAll('[data-rc]').forEach(function (b) { b.addEventListener('click', function () { S.relc[b.dataset.rc] = b.dataset.v; save(); render(); }); });
+  }
+
+  /* step 3 */
+  function step3() {
+    var L = doneList(), sc = scores(), h = '<h2>어떤 은퇴 모습에 가까운가요</h2>';
+    if (!L.length) return h + '<p class="muted">완성된 카드가 없어 추천할 수 없습니다.</p>' + navBtns(1, null);
+    var cur = curType(), rec = bestType(), max = Math.max.apply(null, Object.keys(sc).map(function (k) { return sc[k]; })) || 1;
+    h += '<p class="muted">완성된 카드로 계산한 가까운 정도입니다. 추천과 다른 유형을 직접 골라도 됩니다. 카드가 늘수록 정확해집니다.</p><div class="types">';
+    Object.keys(TYPES).sort(function (a, b) { return sc[b] - sc[a]; }).forEach(function (k) {
+      h += '<button class="type" data-t="' + k + '" aria-pressed="' + (cur === k) + '"><b>' + TYPES[k].n + (k === rec ? ' <span class="tag ok">추천</span>' : '') + '</b><span class="small muted">' + TYPES[k].d + '</span><span class="meter" aria-hidden="true"><i style="width:' + Math.round(sc[k] / max * 100) + '%"></i></span></button>';
+    });
+    h += '</div>';
+    if (S.type && S.type !== rec) h += '<p class="note">추천과 다른 유형을 골랐습니다. 이 차이는 카드를 고칠 근거로 쓰입니다.</p>';
+    return h + navBtns(1, 3, '취향에 맞는 소비 보기', md('spend'));
+  }
+  function bind3() { document.querySelectorAll('.type').forEach(function (b) { b.addEventListener('click', function () { S.type = b.dataset.t; save(); render(); }); }); }
+
+  /* step 4 */
+  /* ---------- 소비 일정: 정기/일회성, 결제일·이용일, 캘린더 ---------- */
+  var MCP = null;
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function pd(s) { var a = s.split('-'); return new Date(+a[0], +a[1] - 1, +a[2]); }
+  function addD(s, n) { var d = pd(s); d.setDate(d.getDate() + n); return iso(d); }
+  function addM(s, n) { var d = pd(s), day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); return iso(d); }
+  function todayS() { return iso(new Date()); }
+  function md1(s) { var d = pd(s); return (d.getMonth() + 1) + '/' + d.getDate(); }
+  function defPlan(it) {
+    var re = /연 (\d+)회/.exec(it[1]), n = re ? +re[1] : 0, once = !!re || /패키지|검진|과정|탐색|점검|장비|용품|키트|소품|인테리어|준비/.test(it[1]);
+    var t = todayS(), first = addM(t.slice(0, 8) + '01', 1);
+    if (!once) return { k: 'm', amt: it[2], d: first, occ: [], cal: {} };
+    var cnt = n || 1, amt = Math.round(it[2] * 12 / cnt * 10) / 10, occ = [];
+    for (var i = 0; i < cnt; i++) { var u = addM(t.slice(0, 8) + '15', 1 + Math.round(i * 12 / cnt)); occ.push({ p: addD(u, -14), u: u, e: '' }); }
+    return { k: 'o', amt: amt, d: first, occ: occ, cal: {} };
+  }
+  function plan(name) {
+    var v = S.pk[name]; if (!v) return null;
+    if (v === true) { var it = CAT.filter(function (x) { return x[1] === name; })[0]; v = S.pk[name] = defPlan(it); }
+    if (!v.occ) v.occ = []; if (!v.cal) v.cal = {};
+    return v;
+  }
+  function planPays(from, to) {
+    var r = [];
+    pkItems().forEach(function (it) {
+      var p = plan(it[1]);
+      if (p.k === 'm') { for (var i = 0; i < 120; i++) { var x = addM(p.d, i); if (x >= to) break; if (x >= from) r.push({ n: it[1], a: p.amt, d: x, k: 'm' }); } }
+      else p.occ.forEach(function (o) { if (o.p && o.p >= from && o.p < to) r.push({ n: it[1], a: p.amt, d: o.p, k: 'o' }); });
+    });
+    return r;
+  }
+  function spendSplit() {
+    var t = todayS(), mo = 0, oy = 0;
+    pkItems().forEach(function (it) { var p = plan(it[1]); if (p.k === 'm') mo += p.amt; });
+    planPays(t, addM(t, 12)).forEach(function (x) { if (x.k === 'o') oy += x.a; });
+    return { mo: mo, oy: oy, avg: mo + oy / 12 };
+  }
+  function tasteNow() { var t = todayS(), a = t.slice(0, 8) + '01', s = 0; planPays(a, addM(a, 1)).forEach(function (x) { s += x.a; }); return s; }
+  function monthEvents(ym) {
+    var a = ym + '-01', b = addM(a, 1), ev = planPays(a, b).map(function (x) { return { n: x.n, d: x.d, k: x.k, a: x.a }; });
+    pkItems().forEach(function (it) { var p = plan(it[1]); if (p.k === 'o') p.occ.forEach(function (o) { if (o.u && o.u >= a && o.u < b) ev.push({ n: it[1], d: o.u, k: 'u', e: o.e }); }); });
+    return ev.sort(function (x, y) { return x.d < y.d ? -1 : x.d > y.d ? 1 : 0; });
+  }
+  function regs() {
+    var r = [];
+    pkItems().forEach(function (it) {
+      var p = plan(it[1]), nm = it[1];
+      if (p.k === 'm') r.push({ it: it, key: 'm', summary: '[취향소비] ' + nm + ' 정기 결제 · 월 ' + p.amt + '만원', d: p.d, e: p.d, rec: true, desc: '취향 소비 계획(시안). 매월 ' + p.amt + '만원' });
+      else p.occ.forEach(function (o, j) {
+        if (o.p) r.push({ it: it, key: 'p' + j, summary: '[취향소비] ' + nm + ' 결제 · ' + p.amt + '만원', d: o.p, e: o.p, desc: '취향 소비 계획(시안). 결제 ' + p.amt + '만원' });
+        if (o.u) r.push({ it: it, key: 'u' + j, summary: '[취향소비] ' + nm + ' 이용', d: o.u, e: o.e && o.e >= o.u ? o.e : o.u, desc: '취향 소비 계획(시안). 이용 일정' });
+      });
+    });
+    r.forEach(function (x) { var p = plan(x.it[1]); x.done = p.cal[x.key] === x.d; });
+    return r;
+  }
+  function gcalUrl(r) {
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(r.summary) + '&dates=' + r.d.replace(/-/g, '') + '/' + addD(r.e, 1).replace(/-/g, '') + '&details=' + encodeURIComponent(r.desc) + (r.rec ? '&recur=' + encodeURIComponent('RRULE:FREQ=MONTHLY;COUNT=12') : '');
+  }
+  function pvTabs() {
+    var v = S.pv || 'pick';
+    function b(k, t, s) { return '<button data-pv="' + k + '" aria-pressed="' + (v === k) + '"><b>' + t + '</b><span>' + s + '</span></button>'; }
+    return '<div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" role="group" aria-label="취향 소비 보기">' + b('pick', '카드 고르기', '취향에 맞는 카드') + b('plan', '담은 카드·일정', pickedCount() + '개') + b('cal', '캘린더', '결제와 이용') + '</div>';
+  }
+  function planView() {
+    var sp = spendSplit(), h = '<div class="pbar" style="position:static" id="plsum">' + planSumText(sp) + '</div>';
+    var its = pkItems();
+    if (!its.length) return h + '<p class="muted">담은 카드가 없습니다. "카드 고르기"에서 마음에 드는 카드를 담으세요.</p>';
+    h += '<p class="small muted">각 카드를 정기(매달 나가는 돈)로 할지 일회성(한 번 사는 것)으로 할지 고르고, 결제일과 이용일을 정하세요. 일회성은 결제일과 이용일이 다를 수 있습니다.</p><div class="plans">';
+    its.forEach(function (it) {
+      var p = plan(it[1]), ix = CAT.indexOf(it);
+      h += '<div class="plc"><div class="row" style="justify-content:space-between"><b>' + it[1] + '</b><span class="small muted">' + DOM[it[0]] + '</span></div>';
+      h += '<div class="opts"><button data-kind="' + ix + ':m" aria-pressed="' + (p.k === 'm') + '">매달 정기</button><button data-kind="' + ix + ':o" aria-pressed="' + (p.k === 'o') + '">일회성 구매</button></div>';
+      h += '<div class="field"><label for="pa' + ix + '">' + (p.k === 'm' ? '매달 금액(만원)' : '1회 금액(만원)') + '</label><input id="pa' + ix + '" data-amt="' + ix + '" type="number" inputmode="decimal" min="0" step="1" value="' + p.amt + '"></div>';
+      if (p.k === 'm') h += '<div class="field"><label for="pd' + ix + '">첫 결제일 (이후 매월 같은 날)</label><input id="pd' + ix + '" data-md="' + ix + '" type="date" value="' + p.d + '"></div>';
+      else {
+        p.occ.forEach(function (o, j) {
+          h += '<div class="occ"><div class="field"><label for="op' + ix + '-' + j + '">' + (j + 1) + '. 결제일</label><input id="op' + ix + '-' + j + '" data-op="' + ix + ':' + j + '" type="date" value="' + o.p + '"></div><div class="field"><label for="ou' + ix + '-' + j + '">이용일</label><input id="ou' + ix + '-' + j + '" data-ou="' + ix + ':' + j + '" type="date" value="' + o.u + '"></div><div class="field"><label for="oe' + ix + '-' + j + '">이용 종료(선택)</label><input id="oe' + ix + '-' + j + '" data-oe="' + ix + ':' + j + '" type="date" value="' + (o.e || '') + '"></div><button class="btn" data-orm="' + ix + ':' + j + '">삭제</button></div>';
+        });
+        h += '<div><button class="btn" data-oadd="' + ix + '">+ 구매 일정 추가</button></div>';
+      }
+      h += '<div class="row"><button class="btn" data-unpick="' + ix + '">담기 취소</button></div></div>';
+    });
+    return h + '</div>';
+  }
+  function planSumText(sp) { return '정기 월 <b>' + m(sp.mo) + '</b> · 일회성 앞으로 12개월 <b>' + m(sp.oy) + '</b>(월 환산 ' + m(sp.oy / 12) + ') · 월 평균 <b>' + m(sp.avg) + '</b>'; }
+  var WD = ['일', '월', '화', '수', '목', '금', '토'];
+  function calView() {
+    var ym = S.cm || todayS().slice(0, 7), y = +ym.slice(0, 4), mo = +ym.slice(5), ev = monthEvents(ym), first = new Date(y, mo - 1, 1), dim = new Date(y, mo, 0).getDate(), today = todayS();
+    var h = '<div class="row" style="justify-content:space-between"><button class="btn" data-cm="-1" aria-label="이전 달">‹</button><h3>' + y + '년 ' + mo + '월</h3><div class="row"><button class="btn" data-cm="0">이번 달</button><button class="btn" data-cm="1" aria-label="다음 달">›</button></div></div>';
+    h += '<div class="legend small"><span><i class="ev k-m"></i>정기 결제</span><span><i class="ev k-o"></i>일회성 결제</span><span><i class="ev k-u"></i>이용</span></div>';
+    h += '<div class="cal">' + WD.map(function (w) { return '<div class="wd">' + w + '</div>'; }).join('');
+    for (var i = 0; i < first.getDay(); i++) h += '<div class="cd off"></div>';
+    for (var d = 1; d <= dim; d++) {
+      var ds = ym + '-' + pad(d), es = ev.filter(function (e) { return e.d === ds; });
+      h += '<div class="cd' + (ds === today ? ' today' : '') + '"><span class="dn">' + d + '</span>' + es.slice(0, 3).map(function (e) { return '<i class="ev k-' + e.k + '" title="' + e.n + '">' + e.n + '</i>'; }).join('') + (es.length > 3 ? '<span class="more">+' + (es.length - 3) + '</span>' : '') + '</div>';
+    }
+    h += '</div>';
+    var tot = 0; ev.forEach(function (e) { if (e.a) tot += e.a; });
+    h += '<h3>' + mo + '월 일정 · 결제 합계 ' + m(tot) + '</h3>';
+    if (!ev.length) h += '<p class="muted">이 달에는 일정이 없습니다.</p>';
+    else h += '<div class="sum">' + ev.map(function (e) { return '<div><span class="small muted">' + md1(e.d) + '</span> ' + e.n + ' <span class="tag' + (e.k === 'u' ? ' ok' : e.k === 'o' ? ' as' : '') + '">' + (e.k === 'm' ? '정기 결제' : e.k === 'o' ? '결제' : '이용') + '</span></div><div class="r">' + (e.a ? m(e.a) : '') + '</div>'; }).join('') + '</div>';
+    var rg = regs(), nd = rg.filter(function (x) { return !x.done; }).length;
+    h += '<div class="box"><h3>구글 캘린더에 등록</h3><p class="small muted">담은 카드의 결제일과 이용일을 내 구글 캘린더에 일정으로 만듭니다. 정기 결제는 매월 반복(12회), 일회성은 결제일과 이용일을 각각 등록합니다. 한 번 등록한 일정은 날짜가 바뀌지 않으면 다시 만들지 않습니다.</p>';
+    if (MCP) h += '<div class="row"><button class="btn primary" id="gc-reg"' + (nd ? '' : ' disabled') + '>' + (nd ? '구글 캘린더에 등록 (' + nd + '개)' : '모두 등록됨') + '</button><span class="small muted" id="gc-msg" role="status"></span></div>';
+    else h += '<p class="small muted">이 화면에서는 캘린더 연결을 쓸 수 없어, 일정마다 구글 캘린더 링크로 추가합니다.</p>';
+    h += '<details><summary>등록할 일정 ' + rg.length + '개</summary><div class="tw"><table><thead><tr><th>일정</th><th>날짜</th><th>상태</th></tr></thead><tbody>' + rg.map(function (x) { return '<tr><td>' + x.summary.replace('[취향소비] ', '') + '</td><td>' + x.d + (x.rec ? ' (매월)' : x.e !== x.d ? ' ~ ' + x.e : '') + '</td><td>' + (x.done ? '<span class="tag ok">등록됨</span>' : '<a href="' + gcalUrl(x) + '" target="_blank" rel="noopener">링크로 추가</a>') + '</td></tr>'; }).join('') + '</tbody></table></div></details></div>';
+    return h;
+  }
+  function bindPlan() {
+    function keep(fn) { var y = window.scrollY; fn(); save(); render(); window.scrollTo({ top: y }); }
+    function num(v) { v = parseFloat(v); return isFinite(v) && v >= 0 ? v : 0; }
+    function P(ix) { return plan(CAT[+ix][1]); }
+    document.querySelectorAll('[data-pv]').forEach(function (b) { b.addEventListener('click', function () { S.pv = b.dataset.pv; save(); render(); window.scrollTo({ top: 0 }); }); });
+    document.querySelectorAll('[data-kind]').forEach(function (b) { b.addEventListener('click', function () { var a = b.dataset.kind.split(':'); keep(function () { var p = P(a[0]); p.k = a[1]; if (a[1] === 'o' && !p.occ.length) { var u = addM(todayS().slice(0, 8) + '15', 1); p.occ.push({ p: addD(u, -14), u: u, e: '' }); } p.cal = {}; }); }); });
+    document.querySelectorAll('[data-amt]').forEach(function (el) { el.addEventListener('input', function () { P(el.dataset.amt).amt = num(el.value); save(); var s = $('#plsum'); if (s) s.innerHTML = planSumText(spendSplit()); }); });
+    document.querySelectorAll('[data-md]').forEach(function (el) { el.addEventListener('change', function () { if (el.value) keep(function () { P(el.dataset.md).d = el.value; }); }); });
+    [['op', 'p'], ['ou', 'u'], ['oe', 'e']].forEach(function (z) { document.querySelectorAll('[data-' + z[0] + ']').forEach(function (el) { el.addEventListener('change', function () { var a = el.dataset[z[0]].split(':'); keep(function () { P(a[0]).occ[+a[1]][z[1]] = el.value; if (z[1] === 'u' && el.value) { var o = P(a[0]).occ[+a[1]]; if (!o.p || o.p > el.value) o.p = addD(el.value, -14); } }); }); }); });
+    document.querySelectorAll('[data-orm]').forEach(function (b) { b.addEventListener('click', function () { var a = b.dataset.orm.split(':'); keep(function () { P(a[0]).occ.splice(+a[1], 1); }); }); });
+    document.querySelectorAll('[data-oadd]').forEach(function (b) { b.addEventListener('click', function () { keep(function () { var p = P(b.dataset.oadd), last = p.occ.length ? p.occ[p.occ.length - 1].u : addM(todayS().slice(0, 8) + '15', 0), u = addM(last, 3); p.occ.push({ p: addD(u, -14), u: u, e: '' }); }); }); });
+    document.querySelectorAll('[data-unpick]').forEach(function (b) { b.addEventListener('click', function () { keep(function () { delete S.pk[CAT[+b.dataset.unpick][1]]; }); }); });
+    document.querySelectorAll('[data-cm]').forEach(function (b) { b.addEventListener('click', function () { var v = +b.dataset.cm, cur = S.cm || todayS().slice(0, 7); S.cm = v === 0 ? todayS().slice(0, 7) : addM(cur + '-01', v).slice(0, 7); save(); render(); }); });
+    var rb = $('#gc-reg'); if (rb) rb.addEventListener('click', regAll);
+  }
+  function regAll() {
+    var msg = $('#gc-msg'), rb = $('#gc-reg'), list = regs().filter(function (x) { return !x.done; }), ok = 0, i = 0;
+    function say(t) { if (msg) msg.textContent = t; }
+    if (!MCP || !list.length) return;
+    rb.disabled = true; say('등록하는 중…');
+    function next() {
+      if (i >= list.length) { say(ok + '개 등록했습니다.'); save(); render(); return; }
+      var r = list[i++], inp = { summary: r.summary, startTime: r.d + 'T00:00:00', endTime: addD(r.e, 1) + 'T00:00:00', allDay: true, description: r.desc };
+      if (r.rec) inp.recurrenceData = ['RRULE:FREQ=MONTHLY;COUNT=12'];
+      MCP.callTool('Google Calendar', 'create_event', inp).then(function () { plan(r.it[1]).cal[r.key] = r.d; ok++; save(); next(); }).catch(function (e) {
+        var c = e && e.code, t;
+        if (c === 'approval_required' || c === 'not_in_manifest' || c === 'consent_required') t = '구글 캘린더 사용을 허용해야 등록할 수 있습니다. 다시 눌러 허용해 주세요.';
+        else if (c === 'server_not_connected' || c === 'selection_required') t = 'Claude 설정의 커넥터에서 Google Calendar를 연결해 주세요.';
+        else if (c === 'needs_reauth') t = 'Google Calendar 연결이 만료되었습니다. 설정에서 다시 연결해 주세요.';
+        else if (c === 'tool_error') t = '구글 캘린더가 오류를 알려 왔습니다: ' + String(e.message || '').slice(0, 80);
+        else t = '등록 중 문제가 생겼습니다. 잠시 뒤 다시 시도해 주세요.';
+        save(); say(t + (ok ? ' (' + ok + '개는 등록됨)' : '')); if (rb) rb.disabled = false;
+      });
+    }
+    next();
+  }
+  if (window.claude && window.claude.use) { try { window.claude.use('mcp').then(function (x) { MCP = x; if (S.step === 3 && S.pv === 'cal') render(); }).catch(function () { }); } catch (e) { } }
+
+  function step4() {
+    var t = curType(), h = '<h2>' + (t ? TYPES[t].n + '에게 맞는 상품' : '상품 추천') + '</h2>';
+    if (!t) return h + '<p class="muted">완성된 카드가 없습니다.</p>' + navBtns(2, null);
+    var pc = cardById('pay'), pcOk = done(pc), bud = pcOk ? BUDGET[intensity(pc)] / 10000 : 0, pf = pcOk ? focus(pc) : null;
+    h += '<p class="muted">내 취향에 맞는 소비 카드를 영역별로 모아 보여줍니다. 새로 올라온 카드가 위에 오고, 마음에 드는 카드를 눌러 담으세요. 비용은 가정치입니다.</p>';
+    h += pcOk ? '<div class="banner"><b>지불 가치 카드</b><span>취향 예산 월 ' + m(bud) + ' · 아깝지 않은 영역 ' + DOM[pf] + ' · ' + nuance(pc) + '</span></div>' : '<div class="banner"><span>지불 가치 카드를 완성하면 예산 한도와 아깝지 않은 영역이 반영됩니다.</span><button class="btn" data-card="pay">카드 완성하러 가기</button></div>';
+    h += pvTabs();
+    var nav = navBtns(2, 4, '현금흐름 설계하기(유료)', md('flow'), md('taste'), '취향 유형으로');
+    if (S.pv === 'plan') return h + planView() + nav;
+    if (S.pv === 'cal') return h + calView() + nav;
+    var F = feed(), pfv = S.pf || 'all', NEWN = F.out.filter(function (x) { return x.days <= 7; }).length;
+    var cnt = {}; F.out.forEach(function (x) { cnt[x.it[0]] = (cnt[x.it[0]] || 0) + 1; });
+    h += '<div class="opts pfs" role="group" aria-label="보기 필터"><button data-pf="all" aria-pressed="' + (pfv === 'all') + '">전체 ' + F.out.length + '</button><button data-pf="new" aria-pressed="' + (pfv === 'new') + '">새 카드 ' + NEWN + '</button><button data-pf="picked" aria-pressed="' + (pfv === 'picked') + '">담은 것 ' + pickedCount() + '</button>' + DKEYS.filter(function (d) { return cnt[d]; }).map(function (d) { return '<button data-pf="' + d + '" aria-pressed="' + (pfv === d) + '">' + DOM[d] + ' ' + cnt[d] + '</button>'; }).join('') + '</div>';
+    h += '<div class="pbar"><span>담은 카드 ' + pickedCount() + '개 · 월 평균 <b>' + m(sumPicked()) + '</b></span><button class="btn" data-pv="plan">일정 정하기</button>' + (pcOk ? '<span class="tag ' + (sumPicked() > bud ? 'as' : 'ok') + '">' + (sumPicked() > bud ? '예산보다 ' + m(sumPicked() - bud) + ' 많음' : '예산 안') + '</span>' : '') + '</div>';
+    var cats = DKEYS.filter(function (d) { return cnt[d]; }).map(function (d) {
+      var xs = F.out.filter(function (x) { return x.it[0] === d; }).sort(function (a, b) { return a.days - b.days || b.fit - a.fit; });
+      return { d: d, xs: xs, newest: xs[0].days };
+    }).sort(function (a, b) { return a.newest - b.newest; });
+    var shown = 0;
+    cats.forEach(function (c) {
+      var xs = c.xs.filter(function (x) { return pfv === 'all' || pfv === c.d || (pfv === 'new' && x.days <= 7) || (pfv === 'picked' && S.pk[x.it[1]]); });
+      if (!xs.length) return; shown += xs.length;
+      var on = xs.filter(function (x) { return S.pk[x.it[1]]; }).length;
+      h += '<section class="pcat"><div class="phd"><h3>' + DOM[c.d] + '</h3><span class="small muted">' + xs.length + '개' + (on ? ' · 담은 ' + on + '개' : '') + '</span>' + (pf === c.d ? '<span class="tag ok">아깝지 않은 영역</span>' : '') + '</div><div class="pcards">';
+      xs.forEach(function (x) {
+        var sel = !!S.pk[x.it[1]];
+        h += '<button class="pc" data-pk="' + x.i + '" aria-pressed="' + sel + '"><span class="pt">' + x.it[1] + '</span><span class="pm">' + (x.it[2] ? '월 ' + m(x.it[2]) : '수입 연결') + '</span><span class="pw">맞는 카드 ' + x.matched.map(function (id) { return cardById(id).t; }).join(', ') + '</span><span class="pd">' + (x.days <= 7 ? '<span class="tag ok">NEW</span> ' : '') + (x.days === 0 ? '오늘' : x.days + '일 전') + '<b>' + (sel ? '담음 ✓' : '+ 담기') + '</b></span></button>';
+      });
+      h += '</div></section>';
+    });
+    if (!shown) h += '<p class="muted">' + (pfv === 'picked' ? '담은 카드가 없습니다.' : pfv === 'new' ? '최근 7일에 올라온 카드가 없습니다.' : '맞는 카드가 없습니다.') + '</p>';
+    if (F.miss.length) h += '<div class="box"><h3>정보가 부족한 영역</h3><p class="small muted">아래 취향찾기 카드를 완성하면 이 영역의 소비 카드가 나타납니다.</p><div class="row">' + F.miss.map(function (d) { var need = DOMCARDS[d].filter(function (id) { return !done(cardById(id)); })[0]; return '<button class="btn" data-card="' + need + '">' + DOM[d] + ' · ' + cardById(need).t + '</button>'; }).join('') + '</div></div>';
+    if (F.conf.length) h += '<p class="note">내 취향과 충돌해서 뺀 카드 ' + F.conf.length + '개: ' + F.conf.map(function (x) { return x.it[1] + '(' + x.bad.map(function (i) { return cardById(i).t; }).join(', ') + ')'; }).join(' · ') + '</p>';
+    h += '<p class="note">카드의 등록일은 시안용 예시입니다. 금융과 의료는 상품을 직접 판매하지 않고 자격 있는 제휴사와 연결합니다. 여기까지가 무료 구간이고, 자산 관리부터는 유료입니다.</p>';
+    return h + nav;
+  }
+  function bind4() {
+    document.querySelectorAll('[data-pk]').forEach(function (b) { b.addEventListener('click', function () { var y = window.scrollY, nm = CAT[+b.dataset.pk][1]; if (S.pk[nm]) delete S.pk[nm]; else S.pk[nm] = defPlan(CAT[+b.dataset.pk]); save(); render(); window.scrollTo({ top: y }); }); });
+    bindPlan();
+    document.querySelectorAll('[data-pf]').forEach(function (b) { b.addEventListener('click', function () { S.pf = b.dataset.pf; save(); render(); }); });
+    document.querySelectorAll('[data-card]').forEach(function (b) { b.addEventListener('click', function () { S.open = b.dataset.card; S.step = 0; save(); render(); window.scrollTo({ top: 0 }); }); });
+  }
+
+  /* paid */
+  function gate() {
+    return '<div class="gate"><span class="tag as">유료 구간</span><h2>월 현금흐름을 어떻게 쓰고 어떻게 보완할지 다루는 구간입니다</h2><p class="muted">첫 대상은 금융자산 5억원 이상, 월 현금흐름 300만원 이상(연금, 배당, 채권, 월세 합계)인 은퇴 전후의 사람입니다. 지금 현금흐름에 만족하는지에 따라 활용 가이드와 보완 가이드로 나뉩니다. 금융 상품은 추천하지 않고, 계획과 기록, 세금 관점의 안내까지만 다룹니다.</p><ul class="facts"><li><b>현금흐름 진단</b> 월 현금흐름을 연금, 배당, 채권, 월세 등으로 나누어 봄</li><li><b>보완 가이드</b> 부족하다면 추가할 수 있는 곳과 종합소득세, 분리과세, 양도소득세 관점의 안내</li><li><b>계획과 Tracking</b> 목표 현금흐름까지의 계획과 월별 기록</li></ul><div class="row"><button class="btn primary" id="open-paid">시안 체험으로 열어 보기</button><span class="small muted">시안이라 결제 없이 열립니다.</span></div></div>';
+  }
+  var CFK = [['nps', '국민연금'], ['pri', '사적연금(연금저축·IRP·퇴직연금)'], ['div', '배당'], ['bond', '채권·이자'], ['rent', '월세'], ['house', '주택연금'], ['basic', '기초연금'], ['etc', '기타']];
+  var CFC = ['var(--k-sense)', 'var(--k-object)', 'var(--k-drive)', 'var(--k-people)', 'var(--k-way)', 'var(--k-pay)', 'var(--k-rule)', 'var(--ok)'];
+  function cfSum() { var t = 0; allCf().forEach(function (c) { t += sumCf(c); }); return t; }
+  function field(id, label, val, hint, step) { return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="number" inputmode="decimal" step="' + (step || 10) + '" value="' + val + '">' + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>'; }
+  var BR = [[1400, 0.06, 0], [5000, 0.15, 126], [8800, 0.24, 576], [15000, 0.35, 1544], [30000, 0.38, 1994], [50000, 0.40, 2594], [100000, 0.42, 3594], [Infinity, 0.45, 6594]];
+  function tax(ti) { if (ti <= 0) return 0; for (var i = 0; i < BR.length; i++) if (ti <= BR[i][0]) return ti * BR[i][1] - BR[i][2]; return 0; }
+  function ageRate(a) { return a >= 80 ? 0.033 : a >= 70 ? 0.044 : 0.055; }
+  function f1(n) { return (Math.round(n * 10) / 10).toLocaleString('ko-KR'); }
+
+  /* ---------- 가구(본인+배우자): 자산·현금흐름에만 적용 ---------- */
+  var NM = ['본인', '배우자'], MK = ['cf', 'sim', 'other', 'padd', 'dadd', 'radd', 'nshift'];
+  function pickMem() { var o = {}; MK.forEach(function (k) { o[k] = S[k]; }); return o; }
+  function loadMem(o) { MK.forEach(function (k) { S[k] = o[k]; }); }
+  function snap() { if (S.hh) S.hh.st[S.hh.act] = pickMem(); }
+  function freshSp() {
+    var f = JSON.parse(JSON.stringify(fresh()));
+    Object.keys(f.cf).forEach(function (k) { f.cf[k] = 0; }); f.cf.age = 60;
+    f.sim.age = 60; f.sim.props = [];
+    Object.keys(f.sim.fin).forEach(function (k) { if (typeof f.sim.fin[k] === 'number' && k.charAt(0) !== 'y' && ['penStart', 'penY'].indexOf(k) < 0) f.sim.fin[k] = 0; });
+    f.sim.etc.nps = 0; f.sim.etc.house = 0; f.sim.etc.oth = 0;
+    return { cf: f.cf, sim: f.sim, other: 3000, padd: 0, dadd: 0, radd: 0, nshift: 0 };
+  }
+  function switchTo(k) { snap(); S.hh.act = k; S.hh.view = null; loadMem(S.hh.st[k]); }
+  function withMember(i, fn) {
+    snap(); var a = S.hh.act; if (a === i) return fn();
+    var keep = pickMem(); loadMem(S.hh.st[i]);
+    try { return fn(); } finally { loadMem(keep); }
+  }
+  function allCf() { snap(); var a = [S.hh.st[0].cf]; if (S.hh.on) a.push(S.hh.st[1].cf); return a; }
+  function sumCf(c) { var t = 0; CFK.forEach(function (k) { t += c[k[0]] || 0; }); return t; }
+  function baseCost() { snap(); return S.hh.st[0].cf.base; }
+  function memTabs(withAll) {
+    if (!S.hh.on) return '<div class="row"><button class="btn" data-hh="on">+ 배우자 추가(가구로 보기)</button><span class="small muted">자산과 현금흐름만 가족을 포함합니다. 취향은 본인 기준입니다.</span></div>';
+    var cs = allCf(), n = withAll ? 3 : 2, v = S.hh.view === 'all' && withAll;
+    var h = '<div class="seg" style="grid-template-columns:repeat(' + n + ',minmax(0,1fr))" role="group" aria-label="구성원">';
+    [0, 1].forEach(function (i) { h += '<button data-mem="' + i + '" aria-pressed="' + (!v && S.hh.act === i) + '"><b>' + NM[i] + '</b><span>월 ' + m(sumCf(cs[i])) + '</span></button>'; });
+    if (withAll) h += '<button data-mem="all" aria-pressed="' + v + '"><b>가구 합산</b><span>월 ' + m(cfSum()) + '</span></button>';
+    return h + '</div><div class="row"><span class="small muted">연금·배당·월세의 세금 기준(분리과세·종합과세 한도)은 개인별로 따로 봅니다.</span><button class="btn" data-hh="off">배우자 빼기</button></div>';
+  }
+  function bindMem() {
+    document.querySelectorAll('[data-mem]').forEach(function (b) { b.addEventListener('click', function () { if (b.dataset.mem === 'all') { snap(); S.hh.view = 'all'; } else switchTo(+b.dataset.mem); save(); render(); }); });
+    document.querySelectorAll('[data-hh]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        snap();
+        if (b.dataset.hh === 'on') { if (!S.hh.st[1]) S.hh.st[1] = freshSp(); S.hh.on = true; }
+        else { if (S.hh.act === 1) switchTo(0); S.hh.on = false; S.hh.view = null; }
+        save(); render();
+      });
+    });
+  }
+  function hhView5() {
+    var cs = allCf(), tot = cfSum(), taste = sumPicked(), goal = baseCost() + taste, diff = tot - goal, seg = '', rows = '';
+    CFK.forEach(function (k, i) { var v = 0; cs.forEach(function (c) { v += c[k[0]] || 0; }); if (v > 0 && tot > 0) seg += '<i style="width:' + (v / tot * 100) + '%;background:' + CFC[i] + '"></i>'; if (v > 0) rows += '<div><i class="dot" style="background:' + CFC[i] + '"></i>' + k[1] + '</div><div class="r">' + m(v) + ' (' + Math.round(v / tot * 100) + '%)</div>'; });
+    var h = '<div class="hero"><span>가구 월 현금흐름 합계</span><b>' + m(tot) + '</b><span>연 ' + m(tot * 12) + ' · 본인 ' + m(sumCf(cs[0])) + ' + 배우자 ' + m(sumCf(cs[1])) + '</span></div>';
+    h += '<h3>구성</h3><div class="stack" aria-hidden="true">' + seg + '</div><div class="sum">' + rows + '</div>';
+    h += '<h3>목표 지출과 비교</h3><div class="sum"><div>가구 월 기본 생활비</div><div class="r">' + m(baseCost()) + '</div><div>취향 상품(담은 ' + pickedCount() + '개)</div><div class="r">' + m(taste) + '</div><div class="big">목표 월 지출</div><div class="big r">' + m(goal) + '</div><div>' + (diff >= 0 ? '여유' : '부족') + '</div><div class="r ' + (diff >= 0 ? 'good' : 'bad') + '"><b>' + m(Math.abs(diff)) + '</b></div></div>';
+    h += '<h3>개인별 세금 기준선 점검 <span class="tag">일반 정보</span></h3><div class="tw"><table><thead><tr><th>구분(연, 만원)</th><th>기준</th><th>본인</th><th>배우자</th></tr></thead><tbody>';
+    function row(lab, lim, fn) { h += '<tr><td>' + lab + '</td><td>' + lim + '</td>' + cs.map(function (c) { var v = fn(c); return '<td>' + m(v) + (v > lim ? ' <span class="tag as">초과</span>' : '') + '</td>'; }).join('') + '</tr>'; }
+    row('금융소득(배당+채권·이자)', 2000, function (c) { return (c.div + c.bond) * 12; });
+    row('사적연금 수령', 1500, function (c) { return c.pri * 12; });
+    row('월세 수입', 2000, function (c) { return c.rent * 12; });
+    h += '</tbody></table></div>';
+    var over = cs.map(function (c) { return (c.div + c.bond) * 12 > 2000 || c.pri * 12 > 1500 || c.rent * 12 > 2000; });
+    h += '<p class="note">' + (over[0] !== over[1] ? '한쪽만 기준을 넘고 다른 쪽은 여유가 있습니다. 소득이나 자산을 나눠 가지면 기준 안에 머물 수 있는지 세무 전문가와 점검해 볼 만합니다. 명의를 옮길 때는 증여세와 건강보험 피부양자 요건도 함께 봐야 합니다.' : '기준은 한 사람씩 따로 적용됩니다. 부부 합산이 아니라 각자의 소득으로 판단하므로 구성원별로 입력해 점검합니다.') + ' 세율과 한도는 바뀔 수 있어 공식 안내와 세무사 확인이 필요합니다.</p>';
+    return '<div class="lev">' + h + '</div>';
+  }
+  function hhSimView() {
+    var info = [0, 1].map(function (i) {
+      return withMember(i, function () {
+        var s = S.sim, f = s.fin, c = simCalc(0), pv = s.props.reduce(function (x, p) { return x + (p.val || 0); }, 0);
+        return { age: s.age, end: s.end, c: c, pv: pv, fa: penTotal() + f.stock + f.bond + f.isa + f.cash, at: function (n) { return simAt(Math.min(s.end, s.age + n), c).t; } };
+      });
+    });
+    var N = Math.max(info[0].end - info[0].age, info[1].end - info[1].age, 0), best = { t: -1, n: 0 }, k;
+    for (k = 0; k <= N; k++) { var t = info[0].at(k) + info[1].at(k); if (t > best.t) best = { t: t, n: k }; }
+    var h = '<div class="hero"><span>가구 예상 월 현금흐름(세전, 가장 많이 받는 시기: 지금부터 ' + best.n + '년 뒤)</span><b>' + m(best.t) + '</b><span>지금은 ' + m(info[0].at(0) + info[1].at(0)) + ' · 본인 ' + (info[0].age + best.n) + '세, 배우자 ' + (info[1].age + best.n) + '세</span></div>';
+    var ns = []; for (k = 0; k <= N; k += 5) ns.push(k); if (ns[ns.length - 1] !== N && N > 0) ns.push(N);
+    h += '<h3>시점별 가구 월 현금흐름</h3><div class="tw"><table><thead><tr><th>시점</th><th>본인</th><th>배우자</th><th>가구 합계</th></tr></thead><tbody>';
+    ns.forEach(function (n) { h += '<tr><td>' + (n ? n + '년 뒤' : '지금') + '<br><span class="small muted">' + (info[0].age + n) + '세 · ' + (info[1].age + n) + '세</span></td><td>' + m(info[0].at(n)) + '</td><td>' + m(info[1].at(n)) + '</td><td><b>' + m(info[0].at(n) + info[1].at(n)) + '</b>' + (n === best.n ? ' <span class="tag ok">최대</span>' : '') + '</td></tr>'; });
+    h += '</tbody></table></div>';
+    var pv = info[0].pv + info[1].pv, fa = info[0].fa + info[1].fa;
+    h += '<div class="i">가구 부동산 시가 <b>' + m(pv) + '</b>, 금융자산 <b>' + m(fa) + '</b>(본인 ' + m(info[0].fa) + ' + 배우자 ' + m(info[1].fa) + '), 합계 ' + m(pv + fa) + '. 금융자산은 첫 대상 기준(5억원)에 ' + (fa >= 50000 ? '해당합니다.' : '못 미칩니다.') + '</div>';
+    h += '<p class="note">각자의 나이와 수령 시작 시점을 따로 반영해 같은 해에 합산했습니다. 한쪽이 먼저 사망하는 경우(유족연금 등)와 물가, 세금, 건강보험료는 반영하지 않은 단순 계산입니다. 자산 입력과 시뮬레이션 조건은 구성원 탭에서 각자 수정합니다.</p>';
+    return '<div class="lev">' + h + '</div>';
+  }
+
+  function step5() {
+    if (!S.paid) return gate();
+    var c = S.cf, couple = S.hh.on, hv = couple && S.hh.view === 'all', h = '<div class="row"><span class="tag as">유료</span><h2>현금흐름 진단</h2></div><p class="muted">월 현금흐름이 어떤 구조인지 입력하고, 지금 수준에 만족하는지 알려 주세요. 금액은 만원 단위의 가정값이고, 입력은 이 브라우저에만 저장됩니다.</p>';
+    h += memTabs(true);
+    if (hv) h += hhView5();
+    else h += '<div class="calc"><div class="lev"><h3>월 현금흐름 구조' + (couple ? ' · ' + NM[S.hh.act] : '') + '</h3>' + CFK.map(function (k) { return field('c-' + k[0], k[1], c[k[0]]); }).join('') + field('c-age', '나이', c.age, '', 1) + (!couple || S.hh.act === 0 ? field('c-base', couple ? '가구 월 기본 생활비' : '월 기본 생활비', c.base, '취향 상품 비용은 따로 더합니다') : '<p class="small muted">가구 생활비는 본인 탭에서 한 번만 입력합니다.</p>') + '</div><div class="lev" id="cfbox"></div></div>';
+    h += '<div class="box"><h3>지금 월 현금흐름에 만족하시나요?</h3><div class="opts"><button data-sat="ok" aria-pressed="' + (S.sat === 'ok') + '">만족해요</button><button data-sat="low" aria-pressed="' + (S.sat === 'low') + '">더 필요해요</button></div>' + (S.sat === 'low' ? field('c-want', '원하는 월 현금흐름', S.want, '이 금액을 기준으로 보완 가이드를 만듭니다') : '') + '</div>';
+    return h + simNote() + navBtns(S.mode === 'all' ? 3 : null, 5, S.sat ? (S.sat === 'ok' ? '활용 가이드' : '보완 가이드') : '다음 단계');
+  }
+  function cfView() {
+    var c = S.cf, couple = S.hh.on, tot = couple ? sumCf(c) : cfSum(), taste = sumPicked(), goal = baseCost() + taste;
+    var seg = '', rows = '';
+    CFK.forEach(function (k, i) { var v = c[k[0]] || 0; if (v > 0 && tot > 0) seg += '<i style="width:' + (v / tot * 100) + '%;background:' + CFC[i] + '"></i>'; if (v > 0) rows += '<div><i class="dot" style="background:' + CFC[i] + '"></i>' + k[1] + '</div><div class="r">' + m(v) + (tot ? ' (' + Math.round(v / tot * 100) + '%)' : '') + '</div>'; });
+    var diff = tot - goal;
+    var h = '<div class="hero"><span>' + (couple ? NM[S.hh.act] + ' 월 현금흐름 합계' : '월 현금흐름 합계') + '</span><b>' + m(tot) + '</b><span>연 ' + m(tot * 12) + '</span></div><h3>구성</h3><div class="stack" aria-hidden="true">' + seg + '</div><div class="sum">' + rows + '</div>' + (couple ? '<p class="note">목표 지출 비교는 가구 단위라 "가구 합산" 탭에서 봅니다.</p>' : '<h3>목표 지출과 비교</h3>' + (pickedCount() ? '' : '<p class="note">담은 취향 상품이 없어 기본 생활비만 목표로 비교합니다.</p>') + '<div class="sum"><div>기본 생활비</div><div class="r">' + m(baseCost()) + '</div><div>취향 상품(담은 ' + pickedCount() + '개)</div><div class="r">' + m(taste) + '</div><div class="big">목표 월 지출</div><div class="big r">' + m(goal) + '</div><div>' + (diff >= 0 ? '여유' : '부족') + '</div><div class="r ' + (diff >= 0 ? 'good' : 'bad') + '"><b>' + m(Math.abs(diff)) + '</b></div></div>');
+    $('#cfbox').innerHTML = h;
+  }
+  function bind5() {
+    document.querySelectorAll('[data-sat]').forEach(function (b) { b.addEventListener('click', function () { S.sat = b.dataset.sat; save(); render(); }); });
+    var w0 = $('#c-want'); if (w0) w0.addEventListener('input', function () { var v = parseFloat(this.value); S.want = isFinite(v) && v >= 0 ? v : 0; save(); });
+    if (!$('#cfbox')) return;
+    CFK.forEach(function (k) { $('#c-' + k[0]).addEventListener('input', function () { var v = parseFloat(this.value); S.cf[k[0]] = isFinite(v) && v >= 0 ? v : 0; save(); cfView(); }); });
+    ['age', 'base'].forEach(function (k) { if ($('#c-' + k)) $('#c-' + k).addEventListener('input', function () { var v = parseFloat(this.value); S.cf[k] = isFinite(v) && v >= 0 ? v : 0; save(); cfView(); }); });
+    document.querySelectorAll('[data-sat]').forEach(function (b) { b.addEventListener('click', function () { S.sat = b.dataset.sat; save(); render(); }); });
+    var w = $('#c-want'); if (w) w.addEventListener('input', function () { var v = parseFloat(this.value); S.want = isFinite(v) && v >= 0 ? v : 0; save(); });
+    cfView();
+  }
+
+  /* step 6: 활용 가이드(만족) 또는 보완 가이드(부족) */
+  function srcLinks() {
+    return '<p class="note">참고한 자료(블로그와 뉴스 등 보조 자료이며 공식 확인 전입니다): <a href="https://kbthink.com/main/asset-management/pension-n-old-age/kb-goldenlife/kb-goldenlife-240112.html">KB골든라이프 사적연금 종합과세 vs 분리과세</a>, <a href="https://wikidocs.net/blog/@Insight_Lab/22236/">금융소득종합과세 기준 정리</a>, <a href="https://wikidocs.net/blog/@Insight_Lab/20838/">2026 기초연금 정리</a>, <a href="https://wikidocs.net/blog/@Insight_Lab/20948/">2026 주택연금 정리</a>. 세율과 한도는 해마다 바뀔 수 있으니 국세청, 국민연금공단, 한국주택금융공사의 공식 안내와 세무사 확인이 필요합니다.</p>';
+  }
+  function stepOk() {
+    var c = S.cf, tot = cfSum(), items = pickedItems(), tasteSum = sumPicked();
+    var h = '<h3>지금 수준을 유지하면서 쓰는 법</h3><p class="muted">월 현금흐름 ' + m(tot) + '에 만족하는 경우입니다. 구조를 그대로 두고, 어디에 쓸지와 어떻게 지킬지를 봅니다.</p>';
+    h += '<div class="box"><h3>용처 (4단계에서 담은 상품)</h3>' + (items.length ? '<div class="sum">' + items.map(function (x) { return '<div>' + x[0] + '</div><div class="r">' + (x[1] ? '월 ' + m(x[1]) : '수입 연결') + '</div>'; }).join('') + '<div class="big">취향 지출 합계</div><div class="big r">' + m(tasteSum) + '</div><div>기본 생활비 포함 목표 지출</div><div class="r">' + m(baseCost() + tasteSum) + '</div></div>' : '<p class="muted">' + (S.mode === 'paid' ? '취향 상품 없이 이용 중입니다. 무료 구간을 거치면 담은 상품이 용처로 정리됩니다.' : '담은 상품이 없습니다. 4단계에서 상품을 담으면 용처가 정리됩니다.') + '</p>') + '</div>';
+    var rest = []; feed().out.filter(function (x) { return !S.pk[x.it[1]]; }).sort(function (a, b) { return b.fit - a.fit || a.days - b.days; }).forEach(function (x) { rest.push(DOM[x.it[0]] + ' · ' + x.it[1]); });
+    if (rest.length) h += '<div class="box"><h3>아직 담지 않은 추천</h3><div class="chips" style="display:flex;flex-wrap:wrap;gap:6px">' + rest.slice(0, 6).map(function (t) { return '<span class="chip">' + t + '</span>'; }).join('') + '</div></div>';
+    h += '<div class="box"><h3>지키고 조금 불리는 방법(일반 정보)</h3><ul class="facts"><li><b>사적연금 수령액</b>을 연 1,500만원 안에서 관리하면 낮은 분리과세 세율로 받을 수 있습니다.</li><li><b>이자와 배당</b>이 연 2,000만원을 넘으면 종합과세 대상이 되니 구성을 미리 점검합니다.</li><li><b>월세 수입</b>은 연 규모에 따라 분리과세와 종합과세가 갈립니다.</li><li><b>국민연금 수령 시기</b>는 늦추면 늘고 앞당기면 줄어듭니다.</li><li>구체적인 상품 선택은 이 서비스가 아니라 자격 있는 금융기관과 세무 전문가를 통해 합니다.</li></ul></div>';
+    h += '<div class="box"><h3>비슷한 사례 <span class="tag as">가상 사례</span></h3><div class="cols3"><div class="i">월 320만원, 연금 130·배당 120·월세 70. 여행과 식사에 월 90만원, 나머지는 기본 생활비. 해마다 수령 계획만 점검.</div><div class="i">월 300만원, 연금 150·배당 100·채권 50. 취향 상품은 월 60만원으로 제한하고 남는 돈은 현금으로 보유.</div><div class="i">월 350만원, 사적연금 한도 근처. 수령 시기를 나눠 연금소득세 구간을 관리하고 소득은 월세로 보완.</div></div></div>';
+    return h;
+  }
+  function padView() {
+    var c = S.cf, cur = c.pri * 12, add = S.padd, newA = (c.pri + add) * 12, room = Math.max(0, 1500 - cur), rate = ageRate(c.age), h = '';
+    h += '<div class="sum"><div>현재 사적연금 수령액</div><div class="r">연 ' + m(cur) + '</div><div>분리과세 한도</div><div class="r">연 1,500만원</div><div>한도까지 여유</div><div class="r">연 ' + m(room) + ' (월 ' + m(Math.floor(room / 12)) + ')</div></div>';
+    if (add <= 0) h += '<p class="note">증액 희망액을 넣으면 세금이 계산됩니다.</p>';
+    else if (newA <= 1500) {
+      var t = newA * rate;
+      h += '<div class="i ok2"><b>한도 안입니다.</b> 증액 후 연 ' + m(newA) + '이며, 연금소득세는 약 ' + f1(rate * 100) + '%(나이 ' + c.age + '세 기준)로 연 약 ' + f1(t) + '만원입니다. 증액분의 세후 월 증가는 약 ' + f1(add * (1 - rate)) + '만원입니다.</div>';
+    } else {
+      var A = newA * 0.165, B = (tax(S.other + newA) - tax(S.other)) * 1.1, best = Math.min(A, B), low = Math.floor(room / 12), tLow = (cur + low * 12) * rate;
+      h += '<div class="i warn2"><b>한도를 넘습니다.</b> 증액 후 연 ' + m(newA) + '으로 1,500만원을 ' + m(newA - 1500) + ' 넘습니다. 넘으면 연금 전체가 다음 중 하나로 과세됩니다.<br>① 분리과세 16.5%: 연 약 ' + f1(A) + '만원<br>② 종합과세(다른 종합소득 과세표준 연 ' + m(S.other) + ' 가정, 지방소득세 포함 추정): 연 약 ' + f1(B) + '만원<br>더 유리한 쪽은 ' + (A <= B ? '①' : '②') + '이며 연 약 ' + f1(best) + '만원입니다. 한도 안에서 월 ' + m(low) + '만 늘리면 세금은 연 약 ' + f1(tLow) + '만원이니, 넘는 부분만큼 세금이 연 약 ' + f1(best - tLow) + '만원 늘어납니다.</div><p class="note">종합과세 추정에는 연금소득공제와 각종 공제, 건강보험료 영향을 반영하지 않았습니다. 넘는 금액은 다른 방법으로 나누는 것도 검토해 보세요.</p>';
+    }
+    $('#padbox').innerHTML = h;
+  }
+  function stepLow() {
+    var c = S.cf, tot = cfSum(), want = S.want, gap = Math.max(0, want - tot);
+    var finY = (c.div + c.bond) * 12, rentY = c.rent * 12;
+    var h = '<h3>' + m(tot) + '에서 ' + m(want) + '으로</h3><p class="muted">더 필요한 금액은 월 <b>' + m(gap) + '</b>입니다. 현재 구조에서 추가할 수 있는 곳과, 늘릴 때 생기는 세금을 같이 봅니다. 금융 상품은 추천하지 않습니다.</p>';
+    h += '<div id="cfbox2" class="box"></div>';
+    h += '<div class="box"><h3>1. 사적연금(연금저축·IRP·퇴직연금) 늘리기 <span class="tag ok">한도 안내</span></h3><p class="small muted">수령액이 연 1,500만원 이하이면 낮은 세율(연령별 3.3~5.5%)의 분리과세로 끝낼 수 있고, 넘으면 전체가 종합과세 또는 16.5% 분리과세 중 선택 대상이 됩니다. 납입은 연금계좌 합산 연 1,800만원 한도, 세액공제는 그중 일부(최대 900만원)까지입니다.</p><div class="calc">' + '<div class="lev">' + field('p-add', '늘리고 싶은 월 수령액', S.padd, '증액을 정하면 바로 세금이 계산됩니다') + field('p-other', '다른 종합소득 과세표준(연)', S.other, '종합과세 추정에만 쓰입니다', 100) + '</div><div class="lev" id="padbox"></div></div></div>';
+    h += '<div class="box"><h3>2. 배당·이자 늘리기</h3><p class="small muted">현재 금융소득 연 <b>' + m(finY) + '</b>(배당 + 채권·이자). 연 2,000만원까지는 15.4% 원천징수로 끝나고, 넘으면 초과분이 다른 소득과 합쳐 6~45%로 종합과세됩니다. 연 1,000만원을 넘으면 건강보험 피부양자 요건에 영향이 있을 수 있습니다.</p><div class="calc"><div class="lev">' + field('d-add', '늘리고 싶은 월 금융소득', S.dadd, '배당·이자 합계 증가분') + '</div><div class="lev" id="dbox"></div></div></div>';
+    h += '<div class="box"><h3>3. 월세 늘리기</h3><p class="small muted">현재 월세 수입 연 <b>' + m(rentY) + '</b>. 주택 임대수입이 연 2,000만원 이하이면 분리과세(14%)와 종합과세 중 고를 수 있고, 넘으면 종합과세입니다. 아래는 미등록 임대, 필요경비율 50%, 기본공제 200만원을 가정한 대략 계산입니다.</p><div class="calc"><div class="lev">' + field('r-add', '늘리고 싶은 월세', S.radd, '월세 수입 증가분') + '</div><div class="lev" id="rbox"></div></div></div>';
+    h += '<div class="box"><h3>4. 국민연금 수령 시기 바꾸기</h3><p class="small muted">나이 <b>' + c.age + '세</b>, 현재 입력한 국민연금 월 <b>' + m(c.nps) + '</b>을 정상 수령액으로 봅니다. 늦추면 연 약 7.2%(최대 5년) 늘고, 앞당기면 연 약 6%(최대 5년) 줄어드는 것이 일반 원칙입니다.</p><div class="calc"><div class="lev">' + field('n-shift', '수령 시기 조정(년)', S.nshift, '양수는 연기, 음수는 조기(−5~5)', 1) + '</div><div class="lev" id="nbox"></div></div></div>';
+    h += '<div class="box"><h3>5. 기초연금</h3><p class="small">만 65세 이상이고 소득인정액이 기준 이하여야 합니다(2026년 단독 약 228만원, 부부 약 364만원, 최대 약 34만원, 보조 자료 근사치). 금융자산이 5억원 이상이면 재산의 소득환산액이 커서 대상이 아닐 가능성이 높습니다. 복지로 모의계산으로 확인하세요.</p></div>';
+    h += '<div class="box"><h3>6. 주택연금</h3><p class="small">부부 중 1명이 만 55세 이상이고 공시가격 12억원 이하 주택에 실제 거주해야 합니다. 월 지급 예시(종신 정액형, 대략)는 시세 5억원 기준 60세 약 103만원, 70세 약 149만원, 80세 약 225만원입니다. 한국주택금융공사 예상연금 조회로 정확한 값을 확인합니다.</p></div>';
+    h += '<div class="box"><h3>7. 자산을 팔아 현금흐름을 만들 때(양도소득세)</h3><p class="small">부동산이나 주식을 팔면 양도차익에 대해 양도소득세가 생길 수 있고, 보유 기간과 종류에 따라 세율이 크게 다릅니다. 팔기 전에 예상 세액을 세무사와 계산하고, 한 해에 몰아서 팔지 않도록 시기를 나누는 방법을 같이 검토합니다.</p></div>';
+    return h;
+  }
+  function cf2View() {
+    var c = S.cf, tot = cfSum(), seg = '';
+    CFK.forEach(function (k, i) { var v = c[k[0]] || 0; if (v > 0 && tot > 0) seg += '<i style="width:' + (v / tot * 100) + '%;background:' + CFC[i] + '"></i>'; });
+    $('#cfbox2').innerHTML = '<div class="hero"><span>현재 월 현금흐름</span><b>' + m(tot) + '</b><span>연 ' + m(tot * 12) + '</span></div><h3>구조</h3><div class="stack" aria-hidden="true">' + seg + '</div><div class="chips" style="display:flex;flex-wrap:wrap;gap:6px">' + CFK.filter(function (k) { return c[k[0]] > 0; }).map(function (k) { return '<span class="chip">' + k[1] + ' ' + m(c[k[0]]) + '</span>'; }).join('') + '</div>';
+  }
+
+  function dView() {
+    var c = S.cf, add = S.dadd, finY = (c.div + c.bond) * 12, addY = add * 12, newY = finY + addY, h = '';
+    h += '<div class="sum"><div>현재 금융소득</div><div class="r">연 ' + m(finY) + '</div><div>증액 후</div><div class="r">연 ' + m(newY) + '</div><div>2,000만원 기준까지 여유</div><div class="r">연 ' + m(Math.max(0, 2000 - finY)) + '</div></div>';
+    if (add <= 0) h += '<p class="note">증액 희망액을 넣으면 세금이 계산됩니다.</p>';
+    else if (newY <= 2000) h += '<div class="i ok2"><b>기준 안입니다.</b> 증액분 연 ' + m(addY) + '에 15.4%가 원천징수되어 세금은 연 약 ' + f1(addY * 0.154) + '만원이고, 세후 월 증가는 약 ' + f1(add * (1 - 0.154)) + '만원입니다.' + (newY > 1000 ? ' 연 1,000만원을 넘어 건강보험 피부양자 요건은 확인이 필요합니다.' : '') + '</div>';
+    else {
+      var ex = newY - 2000, exTax = (tax(S.other + ex) - tax(S.other)) * 1.1, flat = addY * 0.154, tot = Math.min(newY, 2000) * 0.154 + ex * 0, extra;
+      var before = Math.max(0, finY - 2000), exBefore = before ? (tax(S.other + before) - tax(S.other)) * 1.1 : 0;
+      var taxNew = 2000 * 0.154 + exTax, taxOld = Math.min(finY, 2000) * 0.154 + exBefore;
+      extra = taxNew - taxOld;
+      h += '<div class="i warn2"><b>2,000만원을 넘습니다.</b> 초과분 연 ' + m(ex) + '이 다른 종합소득(과세표준 연 ' + m(S.other) + ' 가정)과 합쳐 과세됩니다. 증액으로 늘어나는 세금은 연 약 ' + f1(extra) + '만원, 세후 월 증가는 약 ' + f1(add - extra / 12) + '만원으로, 증액분 대비 실효세율은 약 ' + f1(extra / addY * 100) + '%입니다.</div><p class="note">배당가산, 배당세액공제, 비교과세, 건강보험료 영향은 반영하지 않은 단순 추정입니다. 증액분이 커서 다른 소득과 합쳐지기 전에 세무사와 구조를 점검하세요.</p>';
+    }
+    $('#dbox').innerHTML = h;
+  }
+  function rView() {
+    var c = S.cf, add = S.radd, cur = c.rent * 12, nw = (c.rent + add) * 12, h = '';
+    function sep(y) { return Math.max(0, y * 0.5 - 200) * 0.154; }
+    function comb(y) { return (tax(S.other + y * 0.5) - tax(S.other)) * 1.1; }
+    h += '<div class="sum"><div>현재 월세 수입</div><div class="r">연 ' + m(cur) + '</div><div>증액 후</div><div class="r">연 ' + m(nw) + '</div></div>';
+    if (add <= 0) h += '<p class="note">증액 희망액을 넣으면 세금이 계산됩니다.</p>';
+    else if (nw <= 2000) {
+      var A = sep(nw) - sep(cur), B = comb(nw) - comb(cur);
+      h += '<div class="i ok2"><b>2,000만원 이하입니다.</b> 증액으로 늘어나는 세금은 분리과세 시 연 약 ' + f1(A) + '만원, 종합과세 시 연 약 ' + f1(B) + '만원(다른 종합소득 과세표준 연 ' + m(S.other) + ' 가정)입니다. 더 유리한 쪽은 ' + (A <= B ? '분리과세' : '종합과세') + '입니다.</div>';
+    } else {
+      var B2 = comb(nw) - (cur <= 2000 ? Math.min(sep(cur), comb(cur)) : comb(cur));
+      h += '<div class="i warn2"><b>2,000만원을 넘습니다.</b> 이 경우 종합과세 대상입니다. 증액으로 늘어나는 세금은 연 약 ' + f1(B2) + '만원으로 추정됩니다(증액분 대비 약 ' + f1(B2 / (add * 12) * 100) + '%).</div>';
+    }
+    h += '<p class="note">1주택 비과세, 등록 임대 혜택, 건강보험료 영향은 반영하지 않았습니다. 세무사 확인이 필요합니다.</p>';
+    $('#rbox').innerHTML = h;
+  }
+  function nView() {
+    var c = S.cf, y = Math.max(-5, Math.min(5, Math.round(S.nshift))), h = '';
+    if (!y) { $('#nbox').innerHTML = '<p class="note">연기는 양수, 조기는 음수로 년수를 넣으면 월 수령액과 손익분기가 계산됩니다.</p>'; return; }
+    var nm = y > 0 ? c.nps * (1 + 0.072 * y) : c.nps * (1 + 0.06 * y), be = y > 0 ? 12 / 0.072 / 12 : (1 - 0.06 * -y) / 0.06 - (-y);
+    var start = y > 0 ? c.age + y : c.age + y;
+    h += '<div class="sum"><div>정상 수령 월액</div><div class="r">' + m(c.nps) + '</div><div>' + (y > 0 ? y + '년 연기' : -y + '년 조기') + ' 시 월액</div><div class="r">' + m(nm) + '</div><div>월 차이</div><div class="r ' + (y > 0 ? 'good' : 'bad') + '">' + (nm >= c.nps ? '+' : '-') + m(Math.abs(nm - c.nps)) + '</div></div>';
+    h += y > 0 ? '<div class="i">연기한 수령을 시작하고 약 <b>' + f1(be) + '년</b>(대략 ' + Math.round(c.age + y + be) + '세 무렵) 이 지나면 누적 수령액이 더 커집니다. 그 전에는 쉬는 기간 동안 받지 못한 금액을 다른 현금흐름으로 메워야 합니다.</div>' : '<div class="i">조기 수령하면 평생 월액이 줄고, 정상 시점으로부터 약 <b>' + f1(be) + '년</b> 뒤부터는 정상 수령 쪽의 누적액이 더 커집니다. 소득이 있는 동안 일찍 받으면 추가 감액될 수 있습니다.</div>';
+    h += '<p class="note">연 7.2%, 6% 규칙에 따른 단순 계산이며 물가 반영과 세금은 제외했습니다. 본인 기준은 국민연금공단에서 확인하세요.</p>';
+    $('#nbox').innerHTML = h;
+  }
+  function step6() {
+    if (!S.paid) return gate();
+    if (S.hh.view === 'all') S.hh.view = null;
+    var h = '<div class="row"><span class="tag as">유료</span><h2>' + (S.sat === 'low' ? '보완 가이드' : S.sat === 'ok' ? '활용 가이드' : '가이드') + '</h2></div>';
+    if (!S.sat) return h + '<p class="muted">먼저 5단계에서 지금 현금흐름에 만족하는지 선택해 주세요.</p>' + navBtns(4, null);
+    if (S.hh.on) h += memTabs(false) + '<p class="note">아래 세금·한도 계산은 <b>' + NM[S.hh.act] + '</b> 기준입니다. 목표 금액과 부족분은 가구 합계 ' + m(cfSum()) + ' 기준으로 봅니다.</p>';
+    h += S.sat === 'ok' ? stepOk() : stepLow();
+    h += srcLinks();
+    return h + navBtns(4, 6, '계획·Tracking');
+  }
+  function bind6() {
+    if (S.sat !== 'low') return;
+    $('#p-add').addEventListener('input', function () { var v = parseFloat(this.value); S.padd = isFinite(v) && v >= 0 ? v : 0; save(); padView(); });
+    $('#p-other').addEventListener('input', function () { var v = parseFloat(this.value); S.other = isFinite(v) && v >= 0 ? v : 0; save(); padView(); });
+    [['d-add', 'dadd', dView], ['r-add', 'radd', rView], ['n-shift', 'nshift', nView]].forEach(function (x) { $('#' + x[0]).addEventListener('input', function () { var v = parseFloat(this.value); S[x[1]] = isFinite(v) ? (x[1] === 'nshift' ? v : Math.max(0, v)) : 0; save(); x[2](); }); });
+    cf2View(); padView(); dView(); rView(); nView();
+  }
+
+  /* step 7: 계획과 기록 */
+  function step7() {
+    if (!S.paid) return gate();
+    var c = S.cf, tot = cfSum(), want = S.sat === 'low' ? S.want : tot, gap = Math.max(0, want - tot), p = S.plan;
+    var h = '<div class="row"><span class="tag as">유료</span><h2>계획과 Tracking</h2></div>';
+    if (!S.sat) return h + '<p class="muted">먼저 5단계에서 현금흐름을 입력하고 만족 여부를 선택해 주세요.</p>' + navBtns(5, null);
+    var room = Math.max(0, Math.floor((1500 - c.pri * 12) / 12)), planSum = p.pri + p.fin + p.rent + p.etc, left = Math.max(0, gap - planSum);
+    h += '<p class="muted">' + (S.sat === 'low' ? '목표 월 현금흐름 ' + m(want) + '까지 부족한 월 ' + m(gap) + '을 어디서 채울지 정합니다.' : '지금 월 현금흐름 ' + m(tot) + '을 유지하는 것이 목표입니다. 지출과 현금흐름을 매달 기록합니다.') + '</p>';
+    if (S.sat === 'low') {
+      h += '<div class="box"><h3>보완 계획 (월 증액, 만원)</h3>' + field('pl-pri', '사적연금', p.pri, '한도 안 증액 가능 월 ' + m(room)) + field('pl-fin', '배당·이자', p.fin) + field('pl-rent', '월세', p.rent) + field('pl-etc', '기타(일, 연금 수령 시기 등)', p.etc) + '<div class="sum"><div>계획 합계</div><div class="r" id="pl-sum">' + m(planSum) + '</div><div class="big">남은 부족액</div><div class="big r ' + (left > 0 ? 'bad' : 'good') + '" id="pl-left">' + m(left) + '</div></div></div>';
+    }
+    h += '<div class="box"><h3>이번 달 기록</h3><p class="small muted">현금흐름과 취향 지출은 다른 서비스에서 가져온 값입니다. 실제와 다르면 칸에 직접 고쳐 쓰고, 비워 두면 가져온 값을 씁니다.</p><div class="calc"><div class="lev">' + trkInputs() + '</div><div class="lev" id="trksum"></div></div></div>';
+    h += '<div class="box"><h3>월별 기록 <span class="small muted">(' + S.log.length + '개월)</span></h3><div class="row"><button class="btn primary" id="l-add">이번 달 기록에 추가</button><button class="btn" id="l-del">마지막 기록 삭제</button></div><div id="trkhist"></div></div>';
+    return h + navBtns(5, null);
+  }
+  function trkNum(v) { return v == null ? '' : v; }
+  function trkField(id, label, hint, ov, auto) {
+    return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="number" inputmode="decimal" min="0" step="10" value="' + trkNum(ov) + '" placeholder="' + Math.round(auto) + '"><span class="hint">' + hint + '</span></div>';
+  }
+  function trkInputs() {
+    var t = S.trk, base = baseCost(), ta = tasteNow(), h = trkField('t-c', '이번 달 현금흐름', '현금흐름 설계에서 가져온 값 ' + m(cfSum()), t.cOv, cfSum()) + trkField('t-t', '취향에 쓴 돈', '취향 소비 일정에서 이번 달 결제 ' + m(ta) + '(담은 ' + pickedCount() + '개)', t.tOv, ta);
+    if (t.split) h += '<div class="sub"><h3>소비 항목별</h3>' + [['t-home', '주거·공과금', t.home], ['t-food', '식비·생활', t.food], ['t-med', '의료·건강', t.med], ['t-etc', '기타', t.etc]].map(function (x) { return field(x[0], x[1], x[2], '', 10); }).join('') + '<p class="small muted">취향에 쓴 돈은 위 값을 그대로 더합니다. 항목은 나중에 더 나눌 수 있습니다.</p></div><div><button class="btn" id="t-split">총 소비 한 칸으로 입력</button></div>';
+    else h += trkField('t-x', '이번 달 총 소비', '기본 생활비 ' + m(base) + ' + 취향 지출을 기본값으로 가져옴', t.xOv, base + ta) + '<div><button class="btn" id="t-split">항목별로 나눠 입력</button></div>';
+    return h;
+  }
+  function trkVals() {
+    var t = S.trk, c = t.cOv != null ? t.cOv : cfSum(), ta = t.tOv != null ? t.tOv : tasteNow();
+    var x = t.split ? t.home + t.food + t.med + t.etc + ta : (t.xOv != null ? t.xOv : baseCost() + ta);
+    return { c: c, t: ta, x: x };
+  }
+  function trkView() {
+    var v = trkVals(), bal = v.c - v.x;
+    $('#trksum').innerHTML = '<div class="hero"><span>이번 달 ' + (bal >= 0 ? '남는 돈' : '부족한 돈') + '</span><b class="' + (bal >= 0 ? 'good' : 'bad') + '" style="color:var(--' + (bal >= 0 ? 'ok' : 'warn') + ')">' + m(Math.abs(bal)) + '</b><span>현금흐름 ' + m(v.c) + ' − 총 소비 ' + m(v.x) + '</span></div><div class="sum"><div>현금흐름</div><div class="r">' + m(v.c) + '</div><div>총 소비</div><div class="r">' + m(v.x) + '</div><div>그 중 취향에 쓴 돈</div><div class="r">' + m(v.t) + '</div></div><div class="meter"><i style="width:' + Math.min(100, Math.round(v.x / Math.max(1, v.c) * 100)) + '%"></i></div><div class="small muted">현금흐름 중 ' + Math.round(v.x / Math.max(1, v.c) * 100) + '%를 소비합니다.</div>';
+  }
+  function histView() {
+    var n = S.log.length, h = '';
+    if (!n) { $('#trkhist').innerHTML = '<p class="note">아직 기록이 없습니다. 이번 달 값을 확인하고 기록에 추가해 보세요.</p>'; return; }
+    var sc = 0, st = 0, sx = 0; S.log.forEach(function (e) { sc += e.c; st += e.t; sx += (e.x != null ? e.x : 0); });
+    var avgC = sc / n, avgT = st / n, avgX = sx / n, want = S.sat === 'low' ? S.want : cfSum();
+    h += '<div class="sum"><div>평균 현금흐름</div><div class="r">' + m(avgC) + ' (목표 ' + m(want) + ')</div><div>평균 총 소비</div><div class="r">' + m(avgX) + '</div><div>평균 취향 지출</div><div class="r">' + m(avgT) + '</div><div class="big">평균 남는 돈</div><div class="big r ' + (avgC - avgX >= 0 ? 'good' : 'bad') + '">' + m(avgC - avgX) + '</div></div><div class="meter"><i style="width:' + Math.min(100, Math.round(avgC / Math.max(1, want) * 100)) + '%"></i></div><div class="chips" style="display:flex;flex-wrap:wrap;gap:6px">' + S.log.map(function (e, i) { return '<span class="chip">' + (i + 1) + '월차 현금흐름 ' + m(e.c) + ' · 소비 ' + (e.x != null ? m(e.x) : '-') + ' · 취향 ' + m(e.t) + '</span>'; }).join('') + '</div>';
+    $('#trkhist').innerHTML = h;
+  }
+  function bind7() {
+    [['pl-pri', 'pri'], ['pl-fin', 'fin'], ['pl-rent', 'rent'], ['pl-etc', 'etc']].forEach(function (x) {
+      var el = $('#' + x[0]); if (!el) return;
+      el.addEventListener('input', function () {
+        var v = parseFloat(this.value); S.plan[x[1]] = isFinite(v) && v >= 0 ? v : 0; save();
+        var gap = Math.max(0, S.want - cfSum()), ps = S.plan.pri + S.plan.fin + S.plan.rent + S.plan.etc, left = Math.max(0, gap - ps);
+        $('#pl-sum').textContent = m(ps); var l = $('#pl-left'); l.textContent = m(left); l.className = 'big r ' + (left > 0 ? 'bad' : 'good');
+      });
+    });
+    if (!$('#t-split')) return;
+    function num(v) { v = parseFloat(v); return isFinite(v) && v >= 0 ? v : 0; }
+    [['t-c', 'cOv'], ['t-t', 'tOv'], ['t-x', 'xOv']].forEach(function (x) {
+      var el = $('#' + x[0]); if (!el) return;
+      el.addEventListener('input', function () { S.trk[x[1]] = this.value === '' ? null : num(this.value); save(); trkView(); });
+    });
+    [['t-home', 'home'], ['t-food', 'food'], ['t-med', 'med'], ['t-etc', 'etc']].forEach(function (x) {
+      var el = $('#' + x[0]); if (!el) return;
+      el.addEventListener('input', function () { S.trk[x[1]] = num(this.value); save(); trkView(); });
+    });
+    $('#t-split').addEventListener('click', function () {
+      var y = window.scrollY, t = S.trk;
+      if (!t.split) { var v = trkVals(); t.home = Math.max(0, v.x - v.t); t.split = true; } else { var v2 = trkVals(); t.xOv = v2.x; t.split = false; }
+      save(); render(); window.scrollTo({ top: y });
+    });
+    $('#l-add').addEventListener('click', function () { var v = trkVals(); S.log.push({ c: v.c, t: v.t, x: v.x }); if (S.log.length > 36) S.log.shift(); save(); histView(); $('#l-add').parentNode.previousElementSibling.innerHTML = '월별 기록 <span class="small muted">(' + S.log.length + '개월)</span>'; });
+    $('#l-del').addEventListener('click', function () { S.log.pop(); save(); histView(); $('#l-add').parentNode.previousElementSibling.innerHTML = '월별 기록 <span class="small muted">(' + S.log.length + '개월)</span>'; });
+    trkView(); histView();
+  }
+
+
+  /* module: 자산 기반 현금흐름 시뮬레이션 */
+  function simNote() {
+    return '<div class="box" style="margin:14px 0"><h3>금액이 정확하지 않다고 느껴지나요?</h3><p class="small muted">직접 입력한 금액이 어림값이라면 자산을 입력해 현금흐름을 계산하고, 연금계좌가 끝나는 시점까지 시뮬레이션할 수 있습니다.</p><div><button class="btn" data-go="7"' + (S.mode === 'all' ? '' : ' data-md="sim"') + '>자산으로 계산해 보기</button></div></div>';
+  }
+  var PTYPES = ['아파트', '단독·다가구 주택', '오피스텔', '빌딩', '상가', '토지', '기타'];
+  function getp(path) { var a = path.split('.'), o = S.sim; for (var i = 0; i < a.length; i++) o = o[a[i]]; return o; }
+  function setp(path, v) { var a = path.split('.'), o = S.sim; for (var i = 0; i < a.length - 1; i++) o = o[a[i]]; o[a[a.length - 1]] = v; }
+  function sf(path, label, hint, step) { var id = 'sm-' + path.replace(/\./g, '-'); return '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" data-sim="' + path + '" type="number" inputmode="decimal" min="0" step="' + (step || 10) + '" value="' + getp(path) + '">' + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>'; }
+  function penTotal() { var f = S.sim.fin; return f.pdet ? f.irp + f.fund + f.dc : f.pen; }
+  function simCalc(dy) {
+    var s = S.sim, f = s.fin, e = s.etc, g = function (v) { return Math.max(0, v + dy) / 100; };
+    var P = penTotal(), rm = Math.pow(1 + g(f.yPen), 1 / 12) - 1, n = Math.max(1, f.penY) * 12;
+    var pri = P <= 0 ? 0 : rm > 0 ? P * rm / (1 - Math.pow(1 + rm, -n)) : P / n;
+    var rent = 0; s.props.forEach(function (p) { rent += p.rent || 0; });
+    return { rent: rent, pri: pri, div: f.divMode === 'amt' ? (f.divAmt || 0) / 12 : f.stock * g(f.yStock) / 12, bond: f.bond * g(f.yBond) / 12, isa: f.isa * g(f.yIsa) / 12, cash: f.cash * g(f.yCash) / 12, nps: e.nps, house: e.house, oth: e.oth };
+  }
+  var GRP = [['공적연금', 'var(--k-sense)'], ['개인연금', 'var(--k-object)'], ['금융 수익', 'var(--k-drive)'], ['부동산 월세', 'var(--k-way)'], ['기타 소득', 'var(--k-pay)']];
+  function simAt(a, c) {
+    var s = S.sim, f = s.fin, e = s.etc;
+    var g = [(a >= e.npsAge ? c.nps : 0) + (a >= e.houseAge ? c.house : 0), (a >= f.penStart && a < f.penStart + f.penY) ? c.pri : 0, c.div + c.bond + c.isa + c.cash, c.rent, a <= e.othEnd ? c.oth : 0];
+    return { g: g, t: g.reduce(function (x, y) { return x + y; }, 0) };
+  }
+  function simPeak(dy) {
+    var s = S.sim, c = simCalc(dy), best = { t: -1, at: s.age, g: [] };
+    for (var a = s.age; a <= Math.max(s.end, s.age); a++) { var r = simAt(a, c); if (r.t > best.t) best = { t: r.t, at: a, g: r.g }; }
+    best.c = c; return best;
+  }
+  function propRow(p, i) {
+    return '<div class="prop"><div class="field"><label for="sm-pt-' + i + '">유형</label><select id="sm-pt-' + i + '" data-prop="' + i + ':t">' + PTYPES.map(function (t) { return '<option' + (t === p.t ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>'
+      + '<div class="field"><label for="sm-pv-' + i + '">시가(만원)</label><input id="sm-pv-' + i + '" data-prop="' + i + ':val" type="number" inputmode="decimal" min="0" step="1000" value="' + p.val + '"></div>'
+      + '<div class="field"><label for="sm-pr-' + i + '">월 임대수입(만원)</label><input id="sm-pr-' + i + '" data-prop="' + i + ':rent" type="number" inputmode="decimal" min="0" step="10" value="' + p.rent + '"><span class="hint">임대하지 않으면 0</span></div>'
+      + '<div class="row" style="justify-content:space-between"><label class="small"><input type="checkbox" data-prop="' + i + ':live"' + (p.live ? ' checked' : '') + '> 내가 거주 중</label><button class="btn" data-delprop="' + i + '">삭제</button></div></div>';
+  }
+  function step8() {
+    if (!S.paid) return gate();
+    var s = S.sim, f = s.fin, e = s.etc, h = '<div class="row"><span class="tag as">유료</span><h2>자산 시뮬레이션</h2></div><p class="muted">자산을 부동산, 금융자산, 기타로 나눠 입력하면 월 현금흐름을 계산하고 나이에 따라 어떻게 달라지는지 보여 줍니다. 금융 상품은 추천하지 않으며, 금액과 수익률은 가정값이고 만원 단위입니다. 입력은 이 브라우저에만 저장됩니다.</p>';
+    h += memTabs(true);
+    if (S.hh.on && S.hh.view === 'all') return h + hhSimView() + navBtns(null, null);
+    h += '<div class="calc"><div class="lev">';
+    h += '<div class="box"><h3>기본</h3>' + sf('age', '현재 나이', '', 1) + sf('end', '시뮬레이션 끝 나이', '', 1) + '</div>';
+    h += '<div class="box"><h3>1. 부동산 <span class="tag">시가 ' + m(s.props.reduce(function (x, p) { return x + (p.val || 0); }, 0)) + '</span></h3>' + s.props.map(propRow).join('') + '<div><button class="btn" id="sm-addprop">부동산 추가</button></div><p class="small muted">시가는 현금흐름이 아니라 자산 규모를 보는 값입니다. 현금흐름은 월 임대수입으로만 계산합니다.</p></div>';
+    h += '<div class="box"><h3>2. 금융자산</h3>';
+    h += '<div class="sub"><h3>개인연금 <span class="tag">합계 ' + m(penTotal()) + '</span></h3>' + (f.pdet ? sf('fin.irp', 'IRP', '') + sf('fin.fund', '연금저축펀드', '') + sf('fin.dc', '퇴직연금(DC·DB)', '') : sf('fin.pen', '전체 총액', '연금저축·IRP·퇴직연금 합계')) + '<div><button class="btn" id="sm-pdet">' + (f.pdet ? '총액으로 입력' : '펼쳐서 IRP·연금저축펀드·퇴직연금 따로 입력') + '</button></div>' + sf('fin.penStart', '수령 시작 나이', '', 1) + sf('fin.penY', '수령 기간(년)', '이 기간 동안 균등하게 나눠 받는다고 가정', 1) + sf('fin.yPen', '운용수익률(연 %)', '', 0.1) + '</div>';
+    h += '<div class="sub"><h3>주식</h3>' + sf('fin.stock', '평가액', f.divMode === 'amt' ? '비워 두거나 0이어도 됩니다(자산 합계에만 쓰입니다)' : '주식과 주식형 펀드')
+      + '<div class="opts" role="group" aria-label="배당 입력 방식"><button data-dm="rate" aria-pressed="' + (f.divMode !== 'amt') + '">수익률로 계산</button><button data-dm="amt" aria-pressed="' + (f.divMode === 'amt') + '">받는 배당금 직접 입력</button></div>'
+      + (f.divMode === 'amt' ? sf('fin.divAmt', '연 배당금(세전, 만원)', f.stock > 0 ? '평가액 대비 약 ' + (f.divAmt / f.stock * 100).toFixed(1) + '%' : '수익률은 입력하지 않아도 됩니다', 10) : sf('fin.yStock', '배당수익률(연 %)', '배당으로 받는 비율', 0.1)) + '</div>';
+    h += '<div class="sub"><h3>채권</h3>' + sf('fin.bond', '금액', '') + sf('fin.yBond', '이자 수익률(연 %)', '', 0.1) + '</div>';
+    h += '<div class="sub"><h3>ISA</h3>' + sf('fin.isa', '금액', '개인종합자산관리계좌') + sf('fin.yIsa', '예상 수익률(연 %)', '', 0.1) + '</div>';
+    h += '<div class="sub"><h3>현금·예금</h3>' + sf('fin.cash', '금액', '') + sf('fin.yCash', '이자율(연 %)', '', 0.1) + '</div></div>';
+    h += '<div class="box"><h3>3. 기타</h3><div class="sub"><h3>국민연금</h3>' + sf('etc.npsAge', '수령 시작 나이', '조기와 연기는 시작 나이로 반영', 1) + sf('etc.nps', '예상 월 수령액', '국민연금공단 예상연금 조회 값') + '</div><div class="sub"><h3>주택연금</h3>' + sf('etc.houseAge', '수령 시작 나이', '만 55세 이상 가입 가능', 1) + sf('etc.house', '예상 월 수령액', '한국주택금융공사 예상연금 조회 값' + (s.props.some(function (p) { return p.live && ['아파트', '단독·다가구 주택', '오피스텔'].indexOf(p.t) >= 0; }) ? ' · 거주 주택이 있어 대상이 될 수 있음' : '')) + '</div><div class="sub"><h3>기타 소득</h3>' + sf('etc.oth', '월 소득', '근로, 강연, 용역 등') + sf('etc.othEnd', '소득이 끝나는 나이', '', 1) + '</div></div>';
+    h += '</div><div class="lev" id="smbox"></div></div>';
+    return h + navBtns(null, null);
+  }
+  function simView() {
+    var s = S.sim, f = s.fin, e = s.etc, pk = simPeak(0), lo = simPeak(-1), hi = simPeak(1), c = pk.c, h = '';
+    var now = simAt(s.age, c);
+    h += '<div class="hero"><span>예상 월 현금흐름(세전, 가장 많이 받는 시기 ' + pk.at + '세)</span><b>' + m(pk.t) + '</b><span>지금 ' + s.age + '세는 ' + m(now.t) + ' · 수익률 ±1%p이면 ' + m(lo.t) + ' ~ ' + m(hi.t) + '</span></div>';
+    var seg = '', rows = '';
+    GRP.forEach(function (g, i) { var v = pk.g[i]; if (v > 0.5 && pk.t > 0) seg += '<i style="width:' + (v / pk.t * 100) + '%;background:' + g[1] + '"></i>'; if (v > 0.5) rows += '<div><i class="dot" style="background:' + g[1] + '"></i>' + g[0] + '</div><div class="r">' + m(v) + ' (' + Math.round(v / pk.t * 100) + '%)</div>'; });
+    h += '<div class="stack" aria-hidden="true">' + seg + '</div><div class="sum">' + rows + '</div>';
+    var span = Math.max(1, s.end - s.age), step = Math.max(1, Math.ceil(span / 9)), ages = [];
+    for (var a = s.age; a <= s.end; a += step) ages.push(a);
+    var bars = ages.map(function (a) {
+      var r = simAt(a, c);
+      return '<div style="flex:1;min-width:0;display:grid;gap:4px;justify-items:center"><div style="height:120px;width:100%;display:flex;flex-direction:column-reverse;border-radius:4px;overflow:hidden;background:var(--board)" title="' + a + '세 ' + m(r.t) + '">' + r.g.map(function (v, i) { return '<i style="display:block;height:' + (v / Math.max(1, pk.t) * 100) + '%;background:' + GRP[i][1] + '"></i>'; }).join('') + '</div><span class="small muted">' + a + '</span></div>';
+    }).join('');
+    h += '<h3 style="margin-top:6px">나이별 월 현금흐름</h3><div style="display:flex;gap:4px;align-items:flex-end">' + bars + '</div><div class="small muted" style="display:flex;flex-wrap:wrap;gap:4px 12px">' + GRP.map(function (g) { return '<span><i class="dot" style="background:' + g[1] + '"></i>' + g[0] + '</span>'; }).join('') + '</div>';
+    var ev = {}; function addEv(a, t) { if (a >= s.age && a <= s.end) ev[a] = (ev[a] ? ev[a] + ', ' : '') + t; }
+    addEv(s.age, '현재'); addEv(f.penStart, '개인연금 시작'); addEv(f.penStart + f.penY, '개인연금 종료'); addEv(e.npsAge, '국민연금 시작'); if (e.house > 0) addEv(e.houseAge, '주택연금 시작'); if (e.oth > 0) addEv(e.othEnd + 1, '기타 소득 종료');
+    h += '<h3 style="margin-top:6px">시점별 월 현금흐름</h3><div class="sum">' + Object.keys(ev).map(Number).sort(function (x, y) { return x - y; }).map(function (a) { return '<div>' + a + '세 · ' + ev[a] + '</div><div class="r">' + m(simAt(a, c).t) + '</div>'; }).join('') + '</div>';
+    var last = simAt(s.end, c).t;
+    if (last < pk.t * 0.8) h += '<div class="i warn2" style="padding:10px 12px;border:1px solid var(--amber);border-radius:8px;background:var(--amber-bg);font-size:14px"><b>끝 나이(' + s.end + '세)에는 월 ' + m(last) + '로 줄어듭니다.</b> 최대 ' + m(pk.t) + '의 ' + Math.round(last / pk.t * 100) + '%입니다. 연금계좌 수령이 끝나거나 소득이 끊기는 시점 뒤를 어떻게 메울지 정해야 합니다.</div>';
+    var propSum = s.props.reduce(function (x, p) { return x + (p.val || 0); }, 0), finA = penTotal() + f.stock + f.bond + f.isa + f.cash;
+    var finY = (c.div + c.bond + c.cash) * 12, penY = c.pri * 12, rentY = c.rent * 12;
+    h += '<div class="lev"><div class="i">부동산 시가 <b>' + m(propSum) + '</b>, 금융자산 <b>' + m(finA) + '</b>, 합계 ' + m(propSum + finA) + '. 금융자산은 첫 대상 기준(5억원)에 ' + (finA >= 50000 ? '해당합니다.' : '못 미칩니다.') + '</div>';
+    h += '<div class="i">금융소득(이자와 배당, ISA 제외) 연 <b>' + m(finY) + '</b>. 연 2,000만원 ' + (finY > 2000 ? '초과: 종합과세 대상이 됩니다.' : '이하: 15.4% 원천징수로 끝납니다.') + ' ISA 수익은 한도 안에서 비과세와 분리과세라 별도 확인이 필요합니다.</div>';
+    h += '<div class="i">개인연금 수령 연 <b>' + m(penY) + '</b>. 연 1,500만원 ' + (penY > 1500 ? '초과: 전체가 종합과세 또는 16.5% 분리과세 대상입니다.' : '이하: 연령별 낮은 세율의 분리과세입니다.') + '</div>';
+    h += '<div class="i">월세 수입 연 <b>' + m(rentY) + '</b>. ' + (s.props.some(function (p) { return ['빌딩', '상가'].indexOf(p.t) >= 0 && p.rent > 0; }) ? '빌딩과 상가 임대는 사업소득으로 종합과세 대상이라 별도 확인이 필요합니다. ' : '') + '주택 임대수입이 연 2,000만원 이하이면 분리과세를 고를 수 있습니다.</div></div>';
+    h += '<p class="note">물가 상승과 세금, 건강보험료는 반영하지 않은 단순 계산입니다. 개인연금은 원금과 수익을 정해진 기간에 균등하게 나눠 받는다고 보았고, 주식·채권·ISA·예금은 원금을 유지하며 수익만 쓴다고 가정했습니다. 세율과 한도는 공식 안내와 세무사 확인이 필요합니다.</p>';
+    h += '<div class="row"><button class="btn primary" id="sm-apply">이 값을 현금흐름 설계에 적용</button></div>';
+    $('#smbox').innerHTML = h;
+    $('#sm-apply').addEventListener('click', function () {
+      var r = simCalc(0);
+      S.cf = Object.assign(S.cf, { nps: Math.round(r.nps), house: Math.round(r.house), pri: Math.round(r.pri), div: Math.round(r.div), bond: Math.round(r.bond + r.isa + r.cash), rent: Math.round(r.rent), etc: Math.round(r.oth), age: S.sim.age });
+      setMode(S.mode === 'all' ? 'all' : 'flow', 4); save(); render(); window.scrollTo({ top: 0 });
+    });
+  }
+  function bind8() {
+    if (S.hh.on && S.hh.view === 'all') return;
+    function num(v) { v = parseFloat(v); return isFinite(v) && v >= 0 ? v : 0; }
+    function keep(fn) { var y = window.scrollY; fn(); save(); render(); window.scrollTo({ top: y }); }
+    document.querySelectorAll('[data-sim]').forEach(function (el) { el.addEventListener('input', function () { setp(el.dataset.sim, num(el.value)); save(); simView(); var fl = el.dataset.sim === 'fin.irp' || el.dataset.sim === 'fin.fund' || el.dataset.sim === 'fin.dc'; if (fl) { var t = document.querySelector('.sub .tag'); if (t) t.textContent = '합계 ' + m(penTotal()); } }); });
+    document.querySelectorAll('[data-prop]').forEach(function (el) {
+      el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', function () {
+        var p = el.dataset.prop.split(':'), o = S.sim.props[+p[0]];
+        o[p[1]] = p[1] === 't' ? el.value : p[1] === 'live' ? el.checked : num(el.value);
+        save(); simView();
+      });
+    });
+    document.querySelectorAll('[data-delprop]').forEach(function (b) { b.addEventListener('click', function () { keep(function () { S.sim.props.splice(+b.dataset.delprop, 1); }); }); });
+    document.querySelectorAll('[data-dm]').forEach(function (b) { b.addEventListener('click', function () { keep(function () { S.sim.fin.divMode = b.dataset.dm; }); }); });
+    $('#sm-addprop').addEventListener('click', function () { keep(function () { S.sim.props.push({ t: '아파트', val: 0, rent: 0, live: false }); }); });
+    $('#sm-pdet').addEventListener('click', function () { keep(function () { var f = S.sim.fin; if (!f.pdet) { if (f.irp + f.fund + f.dc === 0) f.irp = f.pen; f.pdet = true; } else { f.pen = f.irp + f.fund + f.dc; f.pdet = false; } }); });
+    simView();
+  }
+
+  function render() {
+    head();
+    var p = $('#panel');
+    p.innerHTML = [step1, step2, step3, step4, step5, step6, step7, step8][S.step]();
+    bindNav(); bindMem();
+    var op = $('#open-paid'); if (op) op.addEventListener('click', function () { S.paid = true; save(); render(); });
+    if (S.step === 0) bind1();
+    if (S.step === 1) bind2();
+    if (S.step === 2) bind3();
+    if (S.step === 3) bind4();
+    if (S.step === 4 && S.paid) bind5();
+    if (S.step === 5 && S.paid) bind6();
+    if (S.step === 6 && S.paid) bind7();
+    if (S.step === 7 && S.paid) bind8();
+  }
+
+  var DEMO = { quiet: [0, 0, 0], dim: [0, 0, 1], tidy: [0, 0, 0], open: [0, 0, 0], mild: [0, 0, 0], care: [0, 0, 0], social: [2, 2, 0], resp: [0, 0, 1], culture: [0, 0, 0], onsen: [0, 1, 0], food: [0, 0, 1], cook: [0, 0, 0], read: [1, 0, 1], romance: [0, 1, 2], novelty: [1, 0, 1], recover: [0, 0, 2], status: [1, 0, 0], growth: [1, 0, 1], perf: [0, 0, 0], home: [0, 0, 0], value: [0, 1, 0], health: [1, 0, 1], secure: [1, 0, 1], pay: [1, 0, 2] };
+  $('#demo').addEventListener('click', function () {
+    S.ans = {}; Object.keys(DEMO).forEach(function (id) { S.ans[id] = DEMO[id].concat([0]); });
+    S.prov = {}; S.s1 = 'card'; S.type = null; S.pk = {}; ['trip', 'meal', 'rest', 'edu', 'home'].forEach(function (d) { var b = bestFor(d); if (b.best) S.pk[b.best.it[1]] = true; }); S.step = 0; S.open = 'quiet'; S.relc = {}; save(); render();
+  });
+
+  /* 내 입력 내보내기·불러오기 (이 기기 밖으로는 파일로만 옮깁니다) */
+  function bkSay(t) { var e = $('#bk-msg'); if (e) e.textContent = t; }
+  function sanitize(v, d) {
+    if (d > 9) return null;
+    if (typeof v === 'string') return /[<>"'`]/.test(v) ? '' : v.slice(0, 200);
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    if (typeof v === 'boolean' || v === null) return v;
+    if (Array.isArray(v)) return v.slice(0, 500).map(function (x) { return sanitize(x, d + 1); });
+    if (typeof v === 'object') { var o = {}; Object.keys(v).slice(0, 600).forEach(function (k) { if (/^[\w가-힣·,\/\-\.\(\) ]{1,80}$/.test(k) && k !== '__proto__') o[k] = sanitize(v[k], d + 1); }); return o; }
+    return null;
+  }
+  function doExport() {
+    snap();
+    var text = JSON.stringify({ app: 'life-butler-pilot', v: 1, exported: new Date().toISOString(), data: S }, null, 1), fn = 'life-butler-' + todayS().replace(/-/g, '') + '.json';
+    function fallback() { try { var a = document.createElement('a'), u = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.href = u; a.download = fn; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 1500); bkSay('파일을 저장했습니다. 금융 정보가 들어 있으니 보관에 주의하세요.'); } catch (e) { bkSay('저장하지 못했습니다.'); } }
+    if (window.claude && window.claude.use) {
+      window.claude.use('downloads').then(function (d) {
+        if (!d) return fallback();
+        d.save({ filename: fn, data: text }).then(function () { bkSay('파일을 저장했습니다. 금융 정보가 들어 있으니 보관에 주의하세요.'); }).catch(function (e) { if (!e || e.code !== 'declined') bkSay('저장하지 못했습니다.'); });
+      }).catch(fallback);
+    } else fallback();
+  }
+  function doImport(file) {
+    if (!file) return;
+    if (file.size > 2000000) { bkSay('파일이 너무 큽니다.'); return; }
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var o = JSON.parse(String(r.result));
+        if (o && o.app === 'life-butler-pilot' && o.data) o = o.data;
+        if (!o || typeof o !== 'object' || !o.ans || typeof o.ans !== 'object') { bkSay('이 서비스에서 내보낸 파일이 아닙니다.'); return; }
+        var clean = sanitize(o, 0);
+        localStorage.setItem(KEY, JSON.stringify(clean));
+        bkSay('불러왔습니다. 화면을 새로 고칩니다.');
+        setTimeout(function () { location.reload(); }, 400);
+      } catch (e) { bkSay('파일을 읽지 못했습니다.'); }
+    };
+    r.onerror = function () { bkSay('파일을 읽지 못했습니다.'); };
+    r.readAsText(file);
+  }
+  $('#bk-exp').addEventListener('click', doExport);
+  $('#bk-imp').addEventListener('click', function () { $('#bk-file').click(); });
+  $('#bk-file').addEventListener('change', function () { doImport(this.files && this.files[0]); this.value = ''; });
+  $('#reset').addEventListener('click', function () { S = fresh(); save(); render(); });
+  render();
+})();
+</script>
+</body>
+</html>
