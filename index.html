@@ -1992,6 +1992,103 @@ bindPc=function(w){
   });
 };
 
+/* ===== v10: 계산기 독립 입력 (개인연금 직접 입력·목표 수령액 플랜, 배당금 직접 입력) ===== */
+function ppDefR(){var w=0,aw=0;GRP.pn.forEach(function(k){var a=leafA(k);if(a>0){w+=a;aw+=a*leafR(k)}});return w?Math.round(aw/w):GDEF.pn}
+function ppIn(){var p=pcs();return {bal:p.ppb!=null?p.ppb:sumK(GRP.pn),pay:p.ppc!=null?p.ppc:(sim().pen||0),stop:p.pps||Reff(),r:p.ppr!=null?p.ppr:ppDefR()}}
+function ppBal(s){/* s세 시점 적립금(오늘 돈) */
+  var I=ppIn(),age=curAge(),y=Math.max(0,s-age),inf=S.infl/1000,i=Math.pow(1+I.r/1000,1/12)-1,B=I.bal*Math.pow(1+I.r/1000,y),c=0;
+  for(var m=0;m<Math.round(y*12);m++){var on=(age+m/12)<Math.min(I.stop,s);c=c*(1+i)+(on?I.pay:0)}
+  return (B+c)/Math.pow(1+inf,y);
+}
+function ppPaid(s){var I=ppIn(),age=curAge(),mo=Math.max(0,Math.round((Math.min(I.stop,s)-age)*12));return I.bal+I.pay*mo}
+function ppPension(s,N){
+  var p=pcs(),s2=Math.max(s,curAge()),bal=ppBal(s2),rr=(1+p.pr/1000)/(1+S.infl/1000)-1,i=Math.pow(1+rr,1/12)-1,n=12*N,
+  pmt=bal>0?(i?bal*i/(1-Math.pow(1+i,-n)):bal/n):0,tx=0;for(var t=0;t<N;t++)tx+=ageTax(s2+t);tx/=N;
+  return {bal:bal,pre:pmt,net:pmt*(1-tx),tax:tx,total:pmt*n,s:s2};
+}
+/* 목표 월 수령액(세후)을 받을 때 남는 금액과 소진 나이 */
+function ppPlan(s,w,N){
+  var p=pcs(),B=ppBal(s),rr=(1+p.pr/1000)/(1+S.infl/1000)-1,i=Math.pow(1+rr,1/12)-1,rows=[],cum=0,dep=null,t;
+  for(t=0;t<=12*60;t++){
+    var age=s+t/12,tx=ageTax(Math.floor(age)),g=w/(1-tx);
+    if(t%12===0)rows.push({age:Math.floor(age),bal:Math.max(0,B),cum:cum});
+    if(B<=0){dep=dep==null?s+t/12:dep;break}
+    var take=Math.min(B,g);cum+=take*(1-tx);B=(B-take)*(1+i);
+    if(B<=0.001&&dep==null){dep=s+(t+1)/12;B=0}
+  }
+  var n=12*N,tx0=ageTax(s),g0=w/(1-tx0),need=g0>0?(i?g0*(1-Math.pow(1+i,-n))/i:g0*n):0;
+  return {rows:rows,dep:dep,need:need,bal:ppBal(s)};
+}
+function dvIn(){var p=pcs();return {A:p.dvA,g:p.dvg!=null?p.dvg:30}}
+function dvMon(a){/* a세의 월 배당(세후, 오늘 돈) */
+  var I=dvIn(),age=curAge();
+  if(I.A!=null){var y=Math.max(0,a-age);return I.A*Math.pow((1+I.g/1000)/(1+S.infl/1000),y)/12*(1-0.154)}
+  return divAt(a).net;
+}
+function ppPaintAll(){
+  var p=pcs(),age=curAge(),I=ppIn(),pe=ppPension(p.pAge,p.pN),has=I.bal>0||I.pay>0;
+  var h='<p class="note" style="margin:0 0 8px">이 계산기는 여기서 직접 넣은 값으로 따로 계산해요. 비워 두면 자산 탭의 연금계좌 값을 써요.</p><div class="rows">'+
+    pcRow('pp:b','지금 연금계좌 적립금','IRP·연금저축 등 지금까지 모은 금액',p.ppb!=null?mf(p.ppb):(I.bal?mf(I.bal)+' · 자산 값':'입력'))+
+    pcRow('pp:c','매월 납입액','앞으로 계속 넣는 금액',I.pay?won(I.pay):'없음')+
+    pcRow('pp:s','납입 종료 나이','이 나이까지 넣어요',I.stop+'세')+
+    pcRow('pp:r','적립 중 연 수익률','쌓는 동안의 가정 수익률',pct(I.r))+
+    pcRow('p:age','수령 시작 나이','55세부터 받을 수 있어요',p.pAge+'세')+pcRow('p:n','수령 기간','10년 이상으로 나눠 받아요',p.pN+'년')+pcRow('p:r','수령 중 운용 수익률','받는 동안 남은 돈의 연 수익 가정',pct(p.pr))+'</div>';
+  if(has){
+    var list=[55,57,60,63,65,70].concat(pe.s).filter(function(a,i,arr){return a>=age&&arr.indexOf(a)===i}).sort(function(a,b){return a-b});
+    h+='<table class="ctab"><thead><tr><th>시작</th><th>넣은 원금</th><th>적립금</th><th>월(세후)</th></tr></thead><tbody>'+list.map(function(a){var e=ppPension(a,p.pN);return '<tr class="'+(a===pe.s?'sel':'')+'" data-pc="pa:'+a+'"><td>'+a+'세</td><td>'+ek(ppPaid(a))+'</td><td>'+ek(e.bal)+'</td><td>'+won(e.net)+'</td></tr>'}).join('')+'</tbody></table>';
+    /* 목표 수령 플랜 */
+    var w=p.ppw||0,h2='<div class="card" style="margin-top:12px"><div class="bl" style="margin:0"><span><b>받고 싶은 금액으로 계획 세우기</b></span></div><div class="small" style="margin-bottom:6px">'+p.pAge+'세부터 매달 받고 싶은 금액(세후)을 정하면, 남는 돈과 언제까지 받을 수 있는지 계산해요.</div><div class="rows">'+pcRow('pp:w','받고 싶은 월 금액(세후)','오늘 돈 기준',w?won(w):'정하기')+'</div>';
+    if(w){
+      var pl=ppPlan(p.pAge,w,p.pN),end=pl.dep,enough=end==null||end>=p.pAge+p.pN;
+      h2+='<div class="big2" style="margin-top:8px">'+(end==null?'80세 넘게 받아요':(end).toFixed(0)+'세까지 받아요')+'</div><div class="small">'+p.pAge+'세 시작 적립금 '+mf(pl.bal)+' · 넣은 원금 '+mf(ppPaid(p.pAge))+'<br>'+p.pN+'년 받으려면 적립금이 <b>'+mf(pl.need)+'</b> 필요해요 → '+(pl.bal>=pl.need?'<span class="okt">'+mf(pl.bal-pl.need)+' 여유</span>':'<span class="ovt">'+mf(pl.need-pl.bal)+' 부족</span>')+'</div>';
+      var step=[];pl.rows.forEach(function(r,i){if(i===0||(r.age-p.pAge)%5===0||i===pl.rows.length-1)step.push(r)});
+      h2+='<table class="ctab sm"><thead><tr><th>나이</th><th>남은 적립금</th><th>누적 수령(세후)</th></tr></thead><tbody>'+step.map(function(r){return '<tr><td>'+r.age+'세</td><td>'+ek(r.bal)+'</td><td>'+ek(r.cum)+'</td></tr>'}).join('')+'</tbody></table>';
+      if(!enough)h2+='<p class="note" style="color:var(--gap)">이대로면 '+p.pN+'년을 채우지 못해요. 받고 싶은 금액을 줄이거나 납입을 늘려 보세요.</p>';
+    }
+    h2+='</div>';h+=h2;
+    /* 투자 비교 */
+    var Hp=ivs().Hp||85,rp=list.map(function(a){var e=ppPension(a,p.pN),s=e.s;return {a:a,m:e.net,sel:a===p.pAge,run:ivRun(function(x){return x>=s&&x<s+p.pN?e.net:0},s,Math.max(Hp,s))}});
+    h+=ivBlock('받은 연금, 생활비 vs 투자 비교',rp,Hp,'p','');
+  }else h+='<p class="note">지금 적립금이나 매월 납입액을 넣으면 계산해요.</p>';
+  h+='<p class="note">오늘 돈 기준이에요. 연금수령 요건(55세 이후, 10년 이상 분할)을 지키면 연금소득세 55~69세 5.5%, 70~79세 4.4%, 80세 이상 3.3%가 일반적으로 적용돼요. 수령 한도를 넘거나 연 수령액이 일정 기준(연 1,500만원 안팎)을 넘으면 세금이 달라질 수 있어요. 세법은 바뀔 수 있으니 세무 전문가에게 확인하세요.</p>';
+  pcE('pcP').innerHTML=h;
+}
+function dvPaintAll(){
+  var p=pcs(),age=curAge(),I=dvIn(),Hd=ivs().Hd||85,asset=sumK(GRP.st),use=I.A!=null||asset>0;
+  var h='<p class="note" style="margin:0 0 8px">이 계산기는 여기서 직접 넣은 배당금으로 따로 계산해요. 비워 두면 자산 탭의 주식 값을 써요.</p><div class="rows">'+
+    pcRow('dv:a','연 배당금(세전)','1년에 받는 배당금 합계',I.A!=null?won(I.A)+' (월 '+won(I.A/12)+')':(asset?'자산 값 사용':'입력'))+
+    pcRow('dv:g','배당 연 증가율','해마다 배당금이 늘어나는 비율',pct(I.g))+'</div>';
+  if(I.A==null&&asset)h+='<div class="rows" style="margin-top:6px">'+pcRow('d:y1','배당주 배당률','자산 값으로 계산할 때',pct(p.dy))+pcRow('d:y2','그 밖의 주식 배당률','미국·성장주·지수 등',pct(p.dy2))+'</div>';
+  if(use){
+    var da=[age,55,60,65,70,75].filter(function(a,i,arr){return a>=age&&arr.indexOf(a)===i});
+    h+='<table class="ctab"><thead><tr><th>나이</th><th>월 배당(세후)</th><th>1년(세후)</th></tr></thead><tbody>'+da.map(function(a){var m=dvMon(a);return '<tr><td>'+(a===age?'지금':a+'세')+'</td><td>'+won(m)+'</td><td>'+won(m*12)+'</td></tr>'}).join('')+'</tbody></table>';
+    var cache={};function dv(x){if(cache[x]==null)cache[x]=dvMon(x);return cache[x]}
+    var st=[Reff(),60,65,70,75].filter(function(a,i,arr){return a>=age&&a<Hd&&arr.indexOf(a)===i}).sort(function(a,b){return a-b});
+    h+=ivBlock('받은 배당, 생활비 vs 재투자 비교',st.map(function(a){return {a:a,m:dv(a),sel:a===Reff(),run:ivRun(function(x){return x>=a?dv(x):0},a,Hd)}}),Hd,'d','');
+  }else h+='<p class="note">연 배당금을 입력하면 계산해요.</p>';
+  h+='<p class="note">배당소득세 15.4%를 뺀 오늘 돈 기준이에요(증가율은 물가보다 낮으면 실질 가치가 줄어요). 금융소득이 연 2,000만원을 넘으면 종합과세 대상이 될 수 있어요.</p>';
+  pcE('pcD').innerHTML=h;
+}
+var _pcPaint10=pcPaint;
+pcPaint=function(){_pcPaint10();if(document.getElementById('pcP'))ppPaintAll();if(document.getElementById('pcD'))dvPaintAll();
+  /* 국민연금 계산기: 출생연도 직접 수정 */
+  var n=document.getElementById('pcN');if(n&&!n.querySelector('[data-pc="by"]'))n.insertAdjacentHTML('afterbegin','<div class="rows" style="margin-bottom:8px">'+pcRow('by','출생연도','정상 수령 나이가 달라져요 · 정상 '+npNormal()+'세',S.by+'년생')+'</div>')};
+var _bindPc10=bindPc;
+bindPc=function(w){
+  _bindPc10(w);
+  w.addEventListener('click',function(e){
+    var b=e.target.closest('[data-pc]');if(!b)return;var a=b.dataset.pc,p=pcs(),again=function(){save();pcPaint()},age=curAge();
+    if(a==='by'){editBirth(function(){pcPaint()});return}
+    if(a==='pp:b'){var it=range(0,60000,100,mf);openSheet({title:'지금 연금계좌 적립금',sub:'IRP·연금저축 등 지금까지 모은 금액을 합쳐서 골라요.',cols:[{items:it,idx:idxOf(it,ppIn().bal),label:'적립금'}],ok:function(v){p.ppb=v[0];again()}})}
+    else if(a==='pp:c'){var it2=range(0,500,5,function(v){return v+'만원'});openSheet({title:'매월 납입액',sub:'앞으로 매달 넣는 금액이에요.',cols:[{items:it2,idx:idxOf(it2,ppIn().pay),label:'월'}],live:function(v){return v[0]?'1년에 <b>'+won(v[0]*12)+'</b>':'0이면 더 넣지 않아요'},ok:function(v){p.ppc=v[0];again()}})}
+    else if(a==='pp:s'){var it3=range(age,80,1,function(v){return v+'세'});openSheet({title:'납입 종료 나이',sub:'이 나이까지 납입하고 그 뒤로는 불리기만 한다고 가정해요.',cols:[{items:it3,idx:idxOf(it3,ppIn().stop),label:'나이'}],ok:function(v){p.pps=v[0];again()}})}
+    else if(a==='pp:r'){var it4=range(0,150,5,pct);openSheet({title:'적립 중 연 수익률',sub:'모으는 동안의 가정 수익률이에요. 보장되지 않아요.',cols:[{items:it4,idx:idxOf(it4,ppIn().r),label:'연 수익률'}],ok:function(v){p.ppr=v[0];again()}})}
+    else if(a==='pp:w'){var it5=range(0,500,5,function(v){return v+'만원'});openSheet({title:'받고 싶은 월 금액(세후)',sub:p.pAge+'세부터 매달 받고 싶은 금액이에요. 오늘 돈 기준.',cols:[{items:it5,idx:idxOf(it5,p.ppw||0),label:'월'}],ok:function(v){p.ppw=v[0];again()}})}
+    else if(a==='dv:a'){var it6=range(0,20000,50,function(v){return mf(v)});openSheet({title:'연 배당금(세전)',sub:'1년 동안 받는 배당금을 모두 합친 금액이에요.',cols:[{items:it6,idx:idxOf(it6,p.dvA||0),label:'연 배당금'}],live:function(v){return v[0]?'월 약 <b>'+won(v[0]/12)+'</b> (세전)':'0이면 자산 값을 써요'},ok:function(v){p.dvA=v[0]||null;again()}})}
+    else if(a==='dv:g'){var it7=range(0,100,5,pct);openSheet({title:'배당 연 증가율',sub:'해마다 배당금이 늘어난다고 가정하는 비율이에요.',cols:[{items:it7,idx:idxOf(it7,dvIn().g),label:'연 증가율'}],ok:function(v){p.dvg=v[0];again()}})}
+  });
+};
+
 
 render();
 })();
