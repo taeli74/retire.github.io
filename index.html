@@ -470,6 +470,9 @@ a.lnk{display:inline-block;text-decoration:none}
 .dot.bad{background:var(--gap)}
 .ovt{font-style:normal;font-weight:800;color:var(--gap)}.okt{font-style:normal;font-weight:800;color:var(--ok)}
 @media (min-width:900px){.cg{grid-template-columns:repeat(3,minmax(0,1fr))}.pane.hm2{max-width:900px}}
+.ctab.sm{font-size:12px}.ctab.sm th small{font-weight:500;font-size:10.5px}.ctab.sm td,.ctab.sm th{padding:7px 2px}
+
+.hubv{margin-top:22px}.hubv .vgrid{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;margin:0 -2px;padding:2px}.hubv .vgrid>*{flex:0 0 72%;max-width:280px;scroll-snap-align:start}
 </style>
 
 <div id="app">
@@ -1880,8 +1883,8 @@ SCR.enjoy=function(el){
        card('en_health','건강',cntSel(HEALTH)?cntSel(HEALTH)+'개 선택':'고르기','검진·병원·운동·동호회'),
        card('en_hobby','취미생활',cntSel(HOBBY)?cntSel(HOBBY)+'개 선택':'고르기','음악·미술·배움·모임'),
        card('en_diet','식단',dn?dn+'가지 선택':'고르기','병에 맞는 식사 원칙'),
-       card('en_trip','여행',tr?'연 '+tr+'회':'정하기','국내·해외, 혼자·가족'),
-       card('e_vid','영상','영상 보기','건강·맛집·취미·여행')]);
+       card('en_trip','여행',tr?'연 '+tr+'회':'정하기','국내·해외, 혼자·가족')]);
+  el.insertAdjacentHTML('beforeend','<div class="hubv">'+vidSection('all')+'</div>');vidDecorate(el.querySelector('.vsec'));
   bindCards(el);setCta(null,null);
 };
 SCR.e_fund_wrap=null;
@@ -1907,6 +1910,71 @@ SCR.h_feed=function(el){
     paint();
   });
   setCta(null,null);
+};
+
+/* ===== v9: 받은 돈 사용 비교 (생활비 vs S&P500 투자, 낙관·보통·비관) ===== */
+function ivs(){var p=pcs();if(!p.iv)p.iv={r:[30,70,100],fx:0,Hn:null,Hp:85,Hd:85};return p.iv}
+function ivReal(r){var v=ivs();return (1+r/1000)*(1+v.fx/1000)/(1+S.infl/1000)-1}
+function ek(v){v=Math.max(0,v);return v>=10000?(v/10000).toFixed(1)+'억':Math.round(v).toLocaleString('ko-KR')+'만'}
+/* pay(age) 월 수령액(오늘 돈), a0 시작 나이, H 비교 나이 → {spent:누적, inv:[3개 수익률 자산]} */
+function ivRun(pay,a0,H){
+  var rs=ivs().r,iv=rs.map(function(r){return Math.pow(1+ivReal(r),1/12)-1}),B=[0,0,0],spent=0,n=Math.max(0,Math.round((H-a0)*12));
+  for(var m=0;m<n;m++){var age=a0+m/12,x=pay(Math.floor(age+1e-9))||0;spent+=x;for(var k=0;k<3;k++)B[k]=B[k]*(1+iv[k])+x}
+  return {spent:spent,inv:B};
+}
+function ivHead(H,key){
+  var v=ivs(),lab=['비관','보통','낙관'];
+  return pcRow('iv:r','S&P500 연 수익률 가정(달러)','비관 '+pct(v.r[0])+' · 보통 '+pct(v.r[1])+' · 낙관 '+pct(v.r[2]),pct(v.r[1]))+
+         pcRow('iv:fx','환율 변동 가정','원/달러 연 변동. 0이면 변동 없음',(v.fx>0?'+':'')+pct(v.fx))+
+         pcRow('iv:H:'+key,'비교 나이','이 나이까지 받은 돈을 어떻게 썼는지 비교해요',H+'세');
+}
+function ivNote(){return '<p class="note">받은 돈 <b>전부</b>를 매달 S&amp;P500(달러 기준)에 넣는다고 가정해요. 수익률은 가정일 뿐 보장되지 않고, 원금 손실이 날 수 있어요. 달러 수익률에 환율 변동과 물가상승률('+pct(S.infl)+')을 반영한 오늘 돈 기준이고, 세금·수수료는 반영하지 않은 <b>세전</b> 값이에요. 특정 상품을 권하는 것이 아니라 비교용 시나리오예요.</p>'}
+function ivTable(rows,H){
+  return '<table class="ctab sm"><thead><tr><th>시작</th><th>월 수령</th><th>쓰면<br><small>누적</small></th><th>투자<br><small>비관</small></th><th>투자<br><small>보통</small></th><th>투자<br><small>낙관</small></th></tr></thead><tbody>'+rows.map(function(r){return '<tr class="'+(r.sel?'sel':'')+'"><td>'+r.a+'세</td><td>'+ek(r.m)+'</td><td>'+ek(r.run.spent)+'</td><td>'+ek(r.run.inv[0])+'</td><td>'+ek(r.run.inv[1])+'</td><td>'+ek(r.run.inv[2])+'</td></tr>'}).join('')+'</tbody></table>';
+}
+function ivBlock(title,rows,H,key,sum){
+  return '<div class="card" style="margin-top:12px"><div class="bl" style="margin:0"><span><b>'+title+'</b></span></div><div class="small" style="margin-bottom:6px">받은 돈을 생활비로 쓸 때와 S&amp;P500에 투자할 때, '+H+'세 시점의 비교예요.</div><div class="rows">'+ivHead(H,key)+'</div>'+(sum||'')+ivTable(rows,H)+ivNote()+'</div>';
+}
+function ivPaint(){
+  var p=pcs(),v=ivs(),n=npNormal(),base=npBase(),na=npAge(),age=curAge(),pbal=sumK(GRP.pn),stbal=sumK(GRP.st);
+  /* 국민연금: 조기 수령해서 투자 vs 정상 수령 */
+  if(base){
+    var H=Math.max(v.Hn||n,n-5+1);v.Hn=v.Hn||null;
+    var H1=v.Hn||n;
+    var rows=[];for(var a=n-5;a<=Math.min(n+5,Math.max(H1,na));a++){var m=npAmt(a);rows.push({a:a,m:m,sel:a===na,run:ivRun(function(x){return x>=a?m:0},a,Math.max(H1,a))})}
+    var sum='';
+    if(na<n){
+      var e=ivRun(function(x){return x>=na?npAmt(na):0},na,H1),nm=npAmt(n),nrm=ivRun(function(x){return x>=n?nm:0},n,H1),lab=['비관','보통','낙관'];
+      sum='<div class="rows" style="margin-top:8px">'+[0,1,2].map(function(k){var d=e.inv[k]-nrm.inv[k];return '<div class="alr"><span class="ic s'+k+'" style="width:12px;height:12px;border-radius:4px"></span><div class="t"><b>'+lab[k]+' ('+pct(v.r[k])+')</b><small>'+na+'세 조기 수령·투자 '+ek(e.inv[k])+' / '+n+'세 정상 수령 '+ek(nrm.inv[k])+'</small></div><b style="color:'+(d>=0?'var(--ok)':'var(--gap)')+'">'+(d>=0?'+':'−')+ek(Math.abs(d))+'</b></div>'}).join('')+'</div><p class="note" style="color:var(--ink)">'+na+'세에 앞당겨 받은 돈을 전부 투자하면 '+H1+'세에 <b>'+(e.inv[1]>=nrm.inv[1]?'보통 가정에서 정상 수령보다 '+ek(e.inv[1]-nrm.inv[1])+' 더':'보통 가정에서 정상 수령보다 '+ek(nrm.inv[1]-e.inv[1])+' 덜')+'</b> 쌓여요. (감액된 월 '+ek(npAmt(na))+' vs 정상 월 '+ek(nm)+', 정상 수령은 '+n+'세부터)</p>';
+    }else sum='<p class="note">위 "수령 시작 나이"를 정상보다 앞당기면, 앞당겨 받아 투자한 경우와 정상 수령의 차이를 바로 보여줘요.</p>';
+    pcE('pcN').insertAdjacentHTML('beforeend',ivBlock('받은 돈, 생활비 vs 투자 비교',rows,H1,'n',sum));
+  }
+  /* 개인연금 */
+  if(pbal){
+    var Hp=v.Hp||85,list=[55,57,60,63,65,70].concat(p.pAge).filter(function(a,i,arr){return a>=age&&arr.indexOf(a)===i}).sort(function(a,b){return a-b});
+    var rp=list.map(function(a){var e=pensionAt(a,p.pN),s=e.s;return {a:a,m:e.net,sel:a===p.pAge,run:ivRun(function(x){return x>=s&&x<s+p.pN?e.net:0},s,Math.max(Hp,s))}});
+    pcE('pcP').insertAdjacentHTML('beforeend',ivBlock('받은 돈, 생활비 vs 투자 비교',rp,Hp,'p','')+'');
+  }
+  /* 배당 */
+  if(stbal){
+    var Hd=v.Hd||85,st=[Reff(),60,65,70,75].filter(function(a,i,arr){return a>=age&&a<Hd&&arr.indexOf(a)===i}).sort(function(a,b){return a-b}),cache={};
+    function dv(x){if(cache[x]==null)cache[x]=divAt(x).net;return cache[x]}
+    var rd=st.map(function(a){return {a:a,m:dv(a),sel:a===Reff(),run:ivRun(function(x){return x>=a?dv(x):0},a,Hd)}});
+    pcE('pcD').insertAdjacentHTML('beforeend',ivBlock('받은 배당, 생활비 vs 재투자 비교',rd,Hd,'d','')+'');
+  }
+}
+var _pcPaint9=pcPaint;
+pcPaint=function(){_pcPaint9();ivPaint()};
+var _bindPc9=bindPc;
+bindPc=function(w){
+  _bindPc9(w);
+  w.addEventListener('click',function(e){
+    var b=e.target.closest('[data-pc^="iv:"]');if(!b)return;var a=b.dataset.pc,v=ivs(),again=function(){save();pcPaint()};
+    if(a==='iv:r'){var its=range(0,200,5,pct);openSheet({title:'S&P500 연 수익률 가정(달러)',sub:'비관·보통·낙관 세 가지를 골라요. 보장되는 값이 아니에요.',cols:[{items:its,idx:idxOf(its,v.r[0]),label:'비관'},{items:its,idx:idxOf(its,v.r[1]),label:'보통'},{items:its,idx:idxOf(its,v.r[2]),label:'낙관'}],ok:function(x){var s=x.slice().sort(function(p,q){return p-q});v.r=s;again()}})}
+    else if(a==='iv:fx'){var fx=range(-50,50,5,function(z){return (z>0?'+':'')+pct(z)});openSheet({title:'환율 변동 가정',sub:'원/달러가 해마다 오르면 +, 내리면 −. 0이면 변동 없음.',cols:[{items:fx,idx:idxOf(fx,v.fx),label:'연 변동'}],ok:function(x){v.fx=x[0];again()}})}
+    else if(a.indexOf('iv:H:')===0){var k=a.slice(5),lo=k==='n'?npNormal():70,hi=100,ag=range(lo,hi,1,function(z){return z+'세'}),cur=k==='n'?(v.Hn||npNormal()):(k==='p'?v.Hp:v.Hd);
+      openSheet({title:'비교 나이',sub:k==='n'?'정상 수령 나이로 두면 "정상 수령을 시작할 때" 얼마나 차이 나는지 볼 수 있어요.':'이 나이 시점의 자산을 비교해요.',cols:[{items:ag,idx:idxOf(ag,cur),label:'나이'}],ok:function(x){if(k==='n')v.Hn=x[0];else if(k==='p')v.Hp=x[0];else v.Hd=x[0];again()}})}
+  });
 };
 
 
