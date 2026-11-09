@@ -1926,7 +1926,7 @@ function ivHead(H,key){
   var v=ivs(),lab=['비관','보통','낙관'];
   return pcRow('iv:r','S&P500 연 수익률 가정(달러)','비관 '+pct(v.r[0])+' · 보통 '+pct(v.r[1])+' · 낙관 '+pct(v.r[2]),pct(v.r[1]))+
          pcRow('iv:fx','환율 변동 가정','원/달러 연 변동. 0이면 변동 없음',(v.fx>0?'+':'')+pct(v.fx))+
-         pcRow('iv:H:'+key,'비교 나이','이 나이까지 받은 돈을 어떻게 썼는지 비교해요',H+'세');
+         pcRow('iv:H:'+key,'비교 나이','이 나이까지의 누적 금액을 비교해요',H+'세');
 }
 function ivNote(){return '<p class="note">받은 돈 <b>전부</b>를 매달 S&amp;P500(달러 기준)에 넣는다고 가정해요. 수익률은 가정일 뿐 보장되지 않고, 원금 손실이 날 수 있어요. 달러 수익률에 환율 변동과 물가상승률('+pct(S.infl)+')을 반영한 오늘 돈 기준이고, 세금·수수료는 반영하지 않은 <b>세전</b> 값이에요. 특정 상품을 권하는 것이 아니라 비교용 시나리오예요.</p>'}
 function ivTable(rows,H){
@@ -1937,17 +1937,32 @@ function ivBlock(title,rows,H,key,sum){
 }
 function ivPaint(){
   var p=pcs(),v=ivs(),n=npNormal(),base=npBase(),na=npAge(),age=curAge(),pbal=sumK(GRP.pn),stbal=sumK(GRP.st);
-  /* 국민연금: 조기 수령해서 투자 vs 정상 수령 */
+  /* 국민연금: a세부터 받아 정상 나이(n)까지는 전부 투자, n세부터는 생활비로 쓰는 경우 vs 정상 수령(생활비) */
   if(base){
-    var H=Math.max(v.Hn||n,n-5+1);v.Hn=v.Hn||null;
-    var H1=v.Hn||n;
-    var rows=[];for(var a=n-5;a<=Math.min(n+5,Math.max(H1,na));a++){var m=npAmt(a);rows.push({a:a,m:m,sel:a===na,run:ivRun(function(x){return x>=a?m:0},a,Math.max(H1,a))})}
-    var sum='';
+    var H1=Math.max(v.Hn||85,n),lab=['비관','보통','낙관'];
+    var mi=ivs().r.map(function(r){return Math.pow(1+ivReal(r),1/12)-1});
+    /* 월 단위로 누적. 반환: {pot,spent2,cum[k],series[k][year]} */
+    function npPath(a,k,H){
+      var m=npAmt(a),pot=0,spent=0,ser=[];
+      for(var t=0;t<Math.round((H-a)*12);t++){var age=a+t/12,x=age>=a?m:0;
+        if(age<n){pot=pot*(1+mi[k])+x}else{pot=pot*(1+mi[k]);spent+=x}}
+      return {pot:pot,spent:spent,cum:pot+spent};
+    }
+    function npCumAt(a,k,Y){/* 나이 Y까지 누적 */return a>=Y?{pot:0,spent:0,cum:0}:npPath(a,k,Y)}
+    var nm=npAmt(n),norm=function(Y){return Math.max(0,Y-n)*12*nm};
+    var rows=[];for(var a=n-5;a<=Math.min(n+5,Math.max(H1,na));a++){(function(a){var m=npAmt(a),r={a:a,m:m,sel:a===na,c:[0,1,2].map(function(k){return a<n?npCumAt(a,k,H1).cum:Math.max(0,H1-a)*12*m})};rows.push(r)})(a)}
+    var tb='<table class="ctab sm"><thead><tr><th>시작</th><th>월 수령</th><th>누적<br><small>비관</small></th><th>누적<br><small>보통</small></th><th>누적<br><small>낙관</small></th></tr></thead><tbody>'+rows.map(function(r){return '<tr class="'+(r.sel?'sel':'')+'"><td>'+r.a+'세</td><td>'+ek(r.m)+'</td><td>'+ek(r.c[0])+'</td><td>'+ek(r.c[1])+'</td><td>'+ek(r.c[2])+'</td></tr>'}).join('')+'</tbody></table>';
+    var sum;
     if(na<n){
-      var e=ivRun(function(x){return x>=na?npAmt(na):0},na,H1),nm=npAmt(n),nrm=ivRun(function(x){return x>=n?nm:0},n,H1),lab=['비관','보통','낙관'];
-      sum='<div class="rows" style="margin-top:8px">'+[0,1,2].map(function(k){var d=e.inv[k]-nrm.inv[k];return '<div class="alr"><span class="ic s'+k+'" style="width:12px;height:12px;border-radius:4px"></span><div class="t"><b>'+lab[k]+' ('+pct(v.r[k])+')</b><small>'+na+'세 조기 수령·투자 '+ek(e.inv[k])+' / '+n+'세 정상 수령 '+ek(nrm.inv[k])+'</small></div><b style="color:'+(d>=0?'var(--ok)':'var(--gap)')+'">'+(d>=0?'+':'−')+ek(Math.abs(d))+'</b></div>'}).join('')+'</div><p class="note" style="color:var(--ink)">'+na+'세에 앞당겨 받은 돈을 전부 투자하면 '+H1+'세에 <b>'+(e.inv[1]>=nrm.inv[1]?'보통 가정에서 정상 수령보다 '+ek(e.inv[1]-nrm.inv[1])+' 더':'보통 가정에서 정상 수령보다 '+ek(nrm.inv[1]-e.inv[1])+' 덜')+'</b> 쌓여요. (감액된 월 '+ek(npAmt(na))+' vs 정상 월 '+ek(nm)+', 정상 수령은 '+n+'세부터)</p>';
-    }else sum='<p class="note">위 "수령 시작 나이"를 정상보다 앞당기면, 앞당겨 받아 투자한 경우와 정상 수령의 차이를 바로 보여줘요.</p>';
-    pcE('pcN').insertAdjacentHTML('beforeend',ivBlock('받은 돈, 생활비 vs 투자 비교',rows,H1,'n',sum));
+      var e=[0,1,2].map(function(k){return npPath(na,k,H1)}),N=norm(H1),lines='';
+      lines=[0,1,2].map(function(k){var d=e[k].cum-N;
+        /* 역전 나이: n 이후 early 누적이 정상 누적보다 작아지는 첫 해 */
+        var cross=null;for(var Y=Math.ceil(n);Y<=100;Y++){if(npPath(na,k,Y).cum<norm(Y)){cross=Y;break}}
+        return '<div class="alr"><span class="ic s'+k+'" style="width:12px;height:12px;border-radius:4px"></span><div class="t"><b>'+lab[k]+' ('+pct(v.r[k])+')</b><small>'+n+'세에 투자금 '+ek(e[k].pot)+' · '+(cross&&cross<=H1?cross+'세에 정상 수령이 역전':(cross?cross+'세에 정상 수령이 역전':'100세까지 앞서요'))+'</small></div><div style="text-align:right"><b>'+ek(e[k].cum)+'</b><br><small style="color:'+(d>=0?'var(--ok)':'var(--gap)')+';font-weight:800">정상보다 '+(d>=0?'+':'−')+ek(Math.abs(d))+'</small></div></div>'}).join('');
+      sum='<div class="bl" style="margin:12px 0 0"><span>'+na+'세 조기 수령 → '+n+'세까지 투자 → '+n+'세부터 생활비</span></div><div class="small">'+H1+'세까지 누적 (정상 수령 '+n+'세부터 월 '+ek(nm)+' 생활비로 쓰면 <b>'+ek(N)+'</b>)</div><div class="rows" style="margin-top:8px">'+lines+'</div><p class="note" style="color:var(--ink)"><b>읽는 법</b> — '+na+'세부터 '+n+'세까지 받은 돈 전부를 S&amp;P500에 넣어 두고, '+n+'세부터는 감액된 월 '+ek(npAmt(na))+'을 생활비로 써요. 투자해 둔 돈은 그대로 불어난다고 보고, 생활비로 쓴 누적액과 합쳐서 정상 수령과 비교한 값이에요. "역전"은 정상 수령의 누적이 이 합계를 넘어서는 나이예요.</p>';
+    }else sum='<p class="note">위 "수령 시작 나이"를 정상 '+n+'세보다 앞당기면, 앞당겨 받은 돈을 '+n+'세까지 투자해서 정상 수령과 누적으로 비교해 줘요.</p>';
+    var head='<div class="card" style="margin-top:12px"><div class="bl" style="margin:0"><span><b>조기 수령 후 투자 vs 정상 수령</b></span></div><div class="small" style="margin-bottom:6px">'+n+'세 이후 받는 연금은 모두 생활비로 쓰고, '+H1+'세까지 누적으로 비교해요.</div><div class="rows">'+ivHead(H1,'n')+'</div>'+sum+tb+ivNote()+'</div>';
+    pcE('pcN').insertAdjacentHTML('beforeend',head);
   }
   /* 개인연금 */
   if(pbal){
@@ -1972,7 +1987,7 @@ bindPc=function(w){
     var b=e.target.closest('[data-pc^="iv:"]');if(!b)return;var a=b.dataset.pc,v=ivs(),again=function(){save();pcPaint()};
     if(a==='iv:r'){var its=range(0,200,5,pct);openSheet({title:'S&P500 연 수익률 가정(달러)',sub:'비관·보통·낙관 세 가지를 골라요. 보장되는 값이 아니에요.',cols:[{items:its,idx:idxOf(its,v.r[0]),label:'비관'},{items:its,idx:idxOf(its,v.r[1]),label:'보통'},{items:its,idx:idxOf(its,v.r[2]),label:'낙관'}],ok:function(x){var s=x.slice().sort(function(p,q){return p-q});v.r=s;again()}})}
     else if(a==='iv:fx'){var fx=range(-50,50,5,function(z){return (z>0?'+':'')+pct(z)});openSheet({title:'환율 변동 가정',sub:'원/달러가 해마다 오르면 +, 내리면 −. 0이면 변동 없음.',cols:[{items:fx,idx:idxOf(fx,v.fx),label:'연 변동'}],ok:function(x){v.fx=x[0];again()}})}
-    else if(a.indexOf('iv:H:')===0){var k=a.slice(5),lo=k==='n'?npNormal():70,hi=100,ag=range(lo,hi,1,function(z){return z+'세'}),cur=k==='n'?(v.Hn||npNormal()):(k==='p'?v.Hp:v.Hd);
+    else if(a.indexOf('iv:H:')===0){var k=a.slice(5),lo=k==='n'?npNormal():70,hi=100,ag=range(lo,hi,1,function(z){return z+'세'}),cur=k==="n"?(v.Hn||85):(k==='p'?v.Hp:v.Hd);
       openSheet({title:'비교 나이',sub:k==='n'?'정상 수령 나이로 두면 "정상 수령을 시작할 때" 얼마나 차이 나는지 볼 수 있어요.':'이 나이 시점의 자산을 비교해요.',cols:[{items:ag,idx:idxOf(ag,cur),label:'나이'}],ok:function(x){if(k==='n')v.Hn=x[0];else if(k==='p')v.Hp=x[0];else v.Hd=x[0];again()}})}
   });
 };
