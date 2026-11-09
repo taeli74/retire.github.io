@@ -399,6 +399,33 @@ a.lnk{display:inline-block;text-decoration:none}
  .pl{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
  .rows{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 }
+/* v6 접기, 자산 */
+.sech.fh{align-items:center;cursor:pointer;user-select:none;gap:8px}
+.sech.fh h2{flex:1}
+.sech.fh small{max-width:55%;text-align:right}
+.chv{width:9px;height:9px;border-right:2.5px solid var(--mute);border-bottom:2.5px solid var(--mute);transform:rotate(45deg);margin:0 4px 3px 6px;transition:transform .2s;flex:none}
+.fold.cl>.fh .chv{transform:rotate(-45deg);margin-bottom:0}
+.fold.cl>.fb{display:none}
+@media (prefers-reduced-motion:reduce){.chv{transition:none}}
+.cmp{display:block;margin-top:8px}
+.cmp .ct{display:block}
+.cmp small{display:flex}
+.cmp .ct{position:relative;height:12px;border-radius:6px;background:rgba(255,255,255,.25);overflow:visible}
+.cmp .ct i{display:block;height:100%;border-radius:6px;background:#fff}
+.cmp .ct u{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fff;opacity:.9;left:50%}
+.cmp small{display:flex;justify-content:space-between;font-size:11.5px;opacity:.85;margin-top:5px}
+.ctab{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;margin-top:8px}
+.ctab th{font-weight:600;color:var(--mute);text-align:right;padding:6px 4px;font-size:12px}
+.ctab td{text-align:right;padding:8px 4px;border-top:1px solid var(--line)}
+.ctab th:first-child,.ctab td:first-child{text-align:left;font-weight:800}
+.chart{width:100%;height:auto;display:block;margin-top:6px}
+.chart .a1{stroke:var(--acc);fill:none;stroke-width:2.5;stroke-linejoin:round}
+.chart .a0{stroke:var(--mute);fill:none;stroke-width:1.5;stroke-dasharray:4 4}
+.chart .af{fill:var(--acc);opacity:.12}
+.chart text{font-size:10px;fill:var(--mute);font-family:inherit}
+.lgd{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--mute)}
+.lgd i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.big2{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
 </style>
 
 <div id="app">
@@ -1310,7 +1337,7 @@ var FCOL=['s0','s1','s2','s3','s4','s5','s6'];
 SCR.enjoy=function(el){
   var g=maxGap(true);
   el.innerHTML='<h1 class="q" style="margin-top:6px">즐거운 자금,<br>이렇게 써볼까요?</h1><p class="sub">현금흐름·자산 분석은 무료예요. 여기서는 쓸 수 있는 돈을 내 취향에 맞게 나눠 드려요.</p>'+
-  '<div class="pl"><div class="pl1"><div class="card"><div class="bl"><span>1. 매달 즐겁게 쓸 돈</span><b id="fv"></b></div><div class="chips" id="fch" style="margin:10px 0"></div><div class="stp"><button type="button" data-f="-10" aria-label="10만원 줄이기">−</button><output id="fo"></output><button type="button" data-f="10" aria-label="10만원 늘리기">+</button></div></div>'+
+  '<div class="sech"><h2>자금 조합 만들기</h2><small>관심사별로 추천해요</small></div><div class="pl"><div class="pl1"><div class="card"><div class="bl"><span>1. 매달 즐겁게 쓸 돈</span><b id="fv"></b></div><div class="chips" id="fch" style="margin:10px 0"></div><div class="stp"><button type="button" data-f="-10" aria-label="10만원 줄이기">−</button><output id="fo"></output><button type="button" data-f="10" aria-label="10만원 늘리기">+</button></div></div>'+
   '<div class="card" style="margin-top:12px"><div class="bl" style="margin-bottom:8px"><span>2. 관심 있는 것 (여러 개)</span></div><div class="chips" id="ich"></div></div></div>'+
   '<div class="pl2"><div class="card"><div class="bl" style="margin-bottom:8px"><span>3. 이렇게 나눠 보세요</span><button class="lnk" id="ar" type="button" hidden>추천으로 되돌리기</button></div><div class="sbar" id="sb"></div><div id="al"></div><p class="note" style="margin-top:8px">비중은 일반적인 은퇴 가계 지출을 참고한 예시 평균이에요. 통계가 아니라 출발점이에요. 직접 조정할 수 있어요.</p></div>'+
   '<div class="card" style="margin-top:12px" id="rs"></div></div></div>'+
@@ -1366,6 +1393,183 @@ SCR.home=function(el){
   $('#dck').onclick=function(){S.en.dc=S.en.dc===td?'':td;save();var b=$('#dck');b.setAttribute('aria-pressed',S.en.dc===td);b.textContent=S.en.dc===td?'오늘 해봤어요':'해봤어요'};
   $('#fcd').onclick=function(){goTab('enjoy')};
 };
+
+/* ===== v6: 접기, 스크롤 유지, 자산 상세·시뮬레이션 ===== */
+/* 접기 */
+var DEFCL=['영상으로 먼저 보기','Gap 줄이기'];
+function mkFold(sec,h,grp,body){
+  var key=S.step+'|'+((h.querySelector('h2')||h).textContent.trim());
+  S.fold=S.fold||{};
+  var open=S.fold[key]!=null?!!S.fold[key]:(h.dataset.open!=null?h.dataset.open==='1':DEFCL.indexOf((h.querySelector('h2')||h).textContent.trim())<0);
+  sec.classList.add('fold');if(!open)sec.classList.add('cl');
+  grp.forEach(function(x){body.appendChild(x)});
+  h.classList.add('fh');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded',open);h.dataset.k=key;
+  h.insertAdjacentHTML('beforeend','<i class="chv" aria-hidden="true"></i>');
+}
+function foldify(root){
+  var kids=[].slice.call(root.children);
+  for(var i=0;i<kids.length;i++){var h=kids[i];
+    if(h.classList.contains('sech')){
+      var grp=[],j=i+1;
+      for(;j<kids.length;j++){var x=kids[j];if(x.classList.contains('sech')||x.classList.contains('vsec')||(x.querySelector&&x.querySelector('#b1')))break;grp.push(x)}
+      var sec=document.createElement('section'),body=document.createElement('div');body.className='fb';
+      root.insertBefore(sec,h);sec.appendChild(h);sec.appendChild(body);mkFold(sec,h,grp,body);sec.appendChild(body);i=j-1;
+    }else if(h.classList.contains('vsec')){
+      var hd=h.querySelector('.sech'),rest=[].slice.call(h.children).filter(function(c){return c!==hd}),b2=document.createElement('div');b2.className='fb';
+      h.appendChild(b2);mkFold(h,hd,rest,b2);
+    }
+  }
+}
+function toggleFold(h){
+  var sec=h.parentNode,cl=sec.classList.toggle('cl');
+  h.setAttribute('aria-expanded',!cl);S.fold=S.fold||{};S.fold[h.dataset.k]=cl?0:1;save();
+}
+$('#screen').addEventListener('click',function(e){var h=e.target.closest('.fh');if(!h||e.target.closest('button,a,input'))return;toggleFold(h)});
+$('#screen').addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('fh')){e.preventDefault();toggleFold(e.target)}});
+['home','flow','enjoy','en_health','en_hobby','en_diet','en_trip'].forEach(function(k){var f=SCR[k];SCR[k]=function(el){f(el);foldify(el)}});
+
+/* 스크롤 위치 유지: 같은 화면 다시 그리기와 뒤로가기에서 위치를 되살려요 */
+var lastRS=null,posMap={},backNav=false;
+var _render1=render;
+render=function(){
+  var sc=$('#screen'),top=sc.scrollTop;if(lastRS)posMap[lastRS]=top;
+  var same=lastRS===S.step,bk=backNav;backNav=false;
+  _render1();
+  if(same)sc.scrollTop=top;else if(bk&&posMap[S.step]!=null)sc.scrollTop=posMap[S.step];
+  lastRS=S.step;
+};
+var _back1=back;back=function(){backNav=true;_back1()};
+$('#back').addEventListener('click',function(){backNav=true},true);
+
+/* ===== 자산 ===== */
+var LD={
+ re:{t:'부동산 전체',g:'부',d:'집·토지 등 통으로 입력',r:30},rh:{t:'거주 주택',g:'집',d:'내가 사는 집',r:30},ri:{t:'투자용 주택·상가',g:'상',d:'월세·임대용',r:30},rl:{t:'토지',g:'토',d:'땅·임야',r:20},ro:{t:'기타 부동산',g:'기',d:'분양권·오피스텔 등',r:20},
+ us:{t:'미국 주식',g:'美',d:'미국 개별 종목',r:70},kr:{t:'한국 주식',g:'韓',d:'국내 개별 종목',r:50},dv:{t:'배당주',g:'배',d:'배당 중심 종목(국내외)',r:45},gr:{t:'성장주',g:'성',d:'성장 중심 종목(국내외)',r:80},ix:{t:'지수·ETF·펀드',g:'지',d:'S&P500·코스피 등',r:60},
+ irp:{t:'IRP',g:'I',d:'개인형 퇴직연금',r:50},pf:{t:'연금저축펀드',g:'연',d:'연금저축 계좌',r:60},po:{t:'기타 연금',g:'기',d:'연금저축보험·퇴직연금 등',r:30},
+ cash:{t:'예금·현금',g:'예',d:'예금·적금·CMA·파킹통장',r:25},bond:{t:'채권',g:'채',d:'국채·회사채·채권형',r:35},oth:{t:'그 밖의 자산',g:'기',d:'금·가상자산·회원권 등',r:20}
+};
+var GRP={re:['re'],reD:['rh','ri','rl','ro'],st:['us','kr','dv','gr','ix'],pn:['irp','pf','po'],ca:['cash','bond','oth']};
+var GDEF={pn:50,st:60,ca:25};
+function ad(){
+  if(!S.ad){var a=S.asset||{},d={};
+    if(a.cash)d.cash={a:a.cash};if(a.bond)d.bond={a:a.bond};if(a.oth)d.oth={a:a.oth};if(a.re)d.re={a:a.re};if(a.stock)d.ix={a:a.stock};if(a.pen)d.po={a:a.pen};
+    S.ad=d}
+  return S.ad;
+}
+function leafA(k){var x=ad()[k];return x&&x.a||0}
+function leafR(k){var x=ad()[k];return x&&x.r!=null?x.r:LD[k].r}
+function reMode(){return S.reM==='detail'?'detail':'total'}
+function sumK(l){return l.reduce(function(s,k){return s+leafA(k)},0)}
+function reSum(){return reMode()==='detail'?sumK(GRP.reD):leafA('re')}
+function activeKeys(){return [].concat(reMode()==='detail'?GRP.reD:GRP.re,GRP.st,GRP.pn,GRP.ca)}
+function syncAsset(){
+  var a={cash:leafA('cash'),bond:leafA('bond'),oth:leafA('oth'),stock:sumK(GRP.st),pen:sumK(GRP.pn),re:reSum()};
+  Object.keys(a).forEach(function(k){if(!a[k])delete a[k]});S.asset=a;
+}
+function totalA(){return reSum()+sumK(GRP.st)+sumK(GRP.pn)+sumK(GRP.ca)}
+function debtA(){return (S.ad&&S.ad.debt&&S.ad.debt.a)||0}
+var AVGN={a:21950,b:48389,c:55161,d:53591};
+function brk(age){return age<40?['39세 이하',AVGN.a]:age<50?['40대',AVGN.b]:age<60?['50대',AVGN.c]:['60세 이상',AVGN.d]}
+function editLeaf(k,done){
+  var L=LD[k],cur=leafA(k),rate=leafR(k);
+  var eok=range(0,50,1,function(v){return v+'억'}),man=range(0,9900,100,function(v){return v.toLocaleString('ko-KR')+'만원'}),rs=range(-20,200,5,pct);
+  openSheet({title:L.t,sub:L.d+' · 금액은 대략이면 충분해요. 성장률은 원하면 바꿔요.',cols:[{items:eok,idx:Math.floor(cur/10000),label:'억'},{items:man,idx:idxOf(man,cur%10000),label:'만원'},{items:rs,idx:idxOf(rs,rate),label:'연 성장률'}],
+    live:function(v){var t=v[0]*10000+v[1];return t?'<b>'+mf(t)+'</b> · 해마다 <b>'+pct(v[2])+'</b> 성장 가정'+(v[2]===L.r?' (기본값)':''):'0원이면 지워져요'},
+    del:cur?function(){delete ad()[k];syncAsset();save();done()}:null,
+    ok:function(v){var t=v[0]*10000+v[1];if(t){var o={a:t};if(v[2]!==L.r)o.r=v[2];ad()[k]=o}else delete ad()[k];syncAsset();save();done()}});
+}
+function editDebt(done){
+  var cur=debtA(),eok=range(0,30,1,function(v){return v+'억'}),man=range(0,9900,100,function(v){return v.toLocaleString('ko-KR')+'만원'});
+  openSheet({title:'부채',sub:'대출 등 갚아야 할 돈이에요. 순자산 비교에 써요.',cols:[{items:eok,idx:Math.floor(cur/10000),label:'억'},{items:man,idx:idxOf(man,cur%10000),label:'만원'}],
+    live:function(v){var t=v[0]*10000+v[1];return t?'<b>'+mf(t)+'</b>':'0원이면 지워져요'},
+    del:cur?function(){delete ad().debt;save();done()}:null,
+    ok:function(v){var t=v[0]*10000+v[1];if(t)ad().debt={a:t};else delete ad().debt;save();done()}});
+}
+function sim(){S.sim=S.sim||{age:65,pen:0,stock:0,cash:0};return S.sim}
+function simRun(){
+  var age=curAge(),s=sim(),T=Math.max(age+1,s.age||65),n=T-age,ret=Reff(),inf=S.infl/1000;
+  var keys=activeKeys().filter(function(k){return leafA(k)>0});
+  var bal={};keys.forEach(function(k){bal[k]=leafA(k)});
+  function grpOf(k){return GRP.re.concat(GRP.reD).indexOf(k)>=0?'re':GRP.st.indexOf(k)>=0?'st':GRP.pn.indexOf(k)>=0?'pn':'ca'}
+  function avgR(g,def){var w=0,a=0;keys.forEach(function(k){if(grpOf(k)===g){w+=leafA(k);a+=leafA(k)*leafR(k)}});return w?a/w:def}
+  var st={pn:{b:0,c:s.pen||0,r:avgR('pn',GDEF.pn)},st:{b:0,c:s.stock||0,r:avgR('st',GDEF.st)},ca:{b:0,c:s.cash||0,r:avgR('ca',GDEF.ca)}};
+  var rows=[],paid=0,debt=debtA();
+  function snap(y){
+    var c={re:0,st:st.st.b,pn:st.pn.b,ca:st.ca.b};keys.forEach(function(k){c[grpOf(k)]+=bal[k]});
+    var tot=c.re+c.st+c.pn+c.ca,real=tot/Math.pow(1+inf,y);
+    rows.push({age:age+y,y:y,re:c.re,st:c.st,pn:c.pn,ca:c.ca,tot:tot,real:real,net:tot-debt,rnet:(tot-debt)/Math.pow(1+inf,y)});
+  }
+  snap(0);
+  for(var y=1;y<=n;y++){
+    keys.forEach(function(k){bal[k]*=1+leafR(k)/1000});
+    ['pn','st','ca'].forEach(function(g){var o=st[g],i=Math.pow(1+o.r/1000,1/12)-1;for(var m=0;m<12;m++){var on=(age+y-1+m/12)<ret;if(on){o.b=o.b*(1+i)+o.c;paid+=o.c}else o.b=o.b*(1+i)}});
+    snap(y);
+  }
+  return {rows:rows,T:T,n:n,paid:paid,ret:ret};
+}
+function lineSvg(rows){
+  var W=320,H=110,pl=6,pr=6,pt=8,pb=18,mx=0;rows.forEach(function(r){mx=Math.max(mx,r.tot)});mx=mx||1;
+  function X(i){return pl+(W-pl-pr)*i/Math.max(1,rows.length-1)}function Y(v){return pt+(H-pt-pb)*(1-v/mx)}
+  var p1=rows.map(function(r,i){return X(i).toFixed(1)+','+Y(r.real).toFixed(1)}).join(' '),p0=rows.map(function(r,i){return X(i).toFixed(1)+','+Y(r.tot).toFixed(1)}).join(' ');
+  var area=pl+','+(H-pb)+' '+p1+' '+(W-pr)+','+(H-pb);
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="나이에 따른 자산 변화 그래프"><polygon class="af" points="'+area+'"/><polyline class="a0" points="'+p0+'"/><polyline class="a1" points="'+p1+'"/><text x="'+pl+'" y="'+(H-4)+'">'+rows[0].age+'세</text><text x="'+(W-pr)+'" y="'+(H-4)+'" text-anchor="end">'+rows[rows.length-1].age+'세</text></svg>';
+}
+function leafRow(k){
+  var L=LD[k],a=leafA(k),r=leafR(k),cu=ad()[k]&&ad()[k].r!=null;
+  return '<button class="row'+(a?'':' add')+'" type="button" data-a="lf:'+k+'"><span class="ic">'+L.g+'</span><span class="t"><b>'+L.t+'</b><span>'+(a?'연 '+pct(r)+(cu?' 성장':' 성장 가정 (기본값)'):L.d)+'</span></span><span class="v">'+(a?mf(a):'추가')+'</span></button>';
+}
+function sec(title,sum,open,body){return '<div class="sech" data-open="'+(open?1:0)+'"><h2>'+title+'</h2><small>'+sum+'</small></div><div>'+body+'</div>'}
+SCR.asset=function(el){
+  syncAsset();
+  var age=curAge(),tot=totalA(),debt=debtA(),net=tot-debt,fin=finTotal(),b=brk(age),pc=net>0?net/b[1]*100:0;
+  var hero=tot?
+   '<div class="hero2 sm" style="cursor:default"><span class="k">내 순자산'+(debt?' (자산 − 부채)':'')+'</span><span class="b">'+mf(Math.max(0,net))+'</span><span class="cmp"><span class="ct"><i style="width:'+Math.min(100,pc/2).toFixed(1)+'%"></i><u></u></span><small><span>0</span><span>'+b[0]+' 평균 '+mf(b[1])+'</span><span>2배</span></small></span><span class="s">내 나이대 평균의 약 <b>'+Math.round(pc)+'%</b> 수준이에요. 자산 '+mf(tot)+(debt?' · 부채 '+mf(debt):'')+'</span></div>'+
+   '<p class="note">평균은 2025 가계금융복지조사(2025년 3월 말, 가구주 연령대별 평균 자산−부채)예요. 평균은 자산이 큰 가구의 영향을 받아 중앙값보다 높아요. 거주 주택을 포함한 금액으로 비교해요.</p>':
+   '<div class="hero2 sm hl" style="cursor:default"><span class="tagnew">입력이 필요해요</span><span class="b">아직 계산 전이에요</span><span class="s">아래 항목을 열어 가진 자산을 채우면 내 나이대 평균과 비교하고, 원하는 나이의 자산을 계산해 드려요.</span></div>';
+  var h='<h1 class="q" style="margin-top:8px;font-size:24px">내 자산</h1>'+hero;
+  var rm=reMode();
+  h+=sec('부동산',reSum()?mf(reSum()):'입력 전',reSum()>0,
+    '<div class="seg2" style="grid-template-columns:1fr 1fr"><button type="button" data-m="total" aria-pressed="'+(rm==='total')+'">통으로 입력</button><button type="button" data-m="detail" aria-pressed="'+(rm==='detail')+'">세부로 나눠서</button></div><div class="rows">'+(rm==='total'?leafRow('re'):GRP.reD.map(leafRow).join(''))+'</div><p class="note">성장률은 해마다 오르는 비율(가격 상승률)이에요. 모르면 기본값 그대로 두세요.</p>');
+  h+=sec('주식·펀드',sumK(GRP.st)?mf(sumK(GRP.st)):'입력 전',sumK(GRP.st)>0,'<div class="rows">'+GRP.st.map(leafRow).join('')+'</div><p class="note">한 종목은 한 곳에만 넣어요. 연금계좌 안의 주식·펀드는 아래 연금계좌에 넣어요.</p>');
+  h+=sec('연금계좌',sumK(GRP.pn)?mf(sumK(GRP.pn)):'입력 전',sumK(GRP.pn)>0,'<div class="rows">'+GRP.pn.map(leafRow).join('')+'</div>');
+  h+=sec('예금·채권·기타',sumK(GRP.ca)?mf(sumK(GRP.ca)):'입력 전',sumK(GRP.ca)>0,'<div class="rows">'+GRP.ca.map(leafRow).join('')+
+    '<button class="row'+(debt?'':' add')+'" type="button" data-a="debt"><span class="ic">채</span><span class="t"><b>부채 (선택)</b><span>대출 등. 순자산 비교에 써요</span></span><span class="v">'+(debt?'−'+mf(debt):'추가')+'</span></button></div>');
+  /* 시뮬레이션 */
+  var s=sim(),T=Math.max(age+1,s.age||65),sm='';
+  if(tot){
+    var R=simRun(),L=R.rows[R.rows.length-1],bb=brk(L.age),pcT=L.rnet>0?L.rnet/bb[1]*100:0,tp=L.tot||1;
+    var cats=[['re','부동산','s3'],['st','주식·펀드','s1'],['pn','연금계좌','s0'],['ca','예금·채권·기타','s4']];
+    var ages=[age];for(var a=Math.ceil((age+1)/5)*5;a<T;a+=5)ages.push(a);ages.push(T);
+    var tb='<table class="ctab"><thead><tr><th>나이</th><th>총자산</th><th>오늘 돈</th><th>평균 대비</th></tr></thead><tbody>'+ages.map(function(x){var r=R.rows[x-age],p=brk(x)[1];return '<tr><td>'+x+'세</td><td>'+mf(r.tot)+'</td><td>'+mf(r.real)+'</td><td>'+Math.round(Math.max(0,r.rnet)/p*100)+'%</td></tr>'}).join('')+'</tbody></table>';
+    sm='<div class="card"><div class="bl" style="margin:0"><span>'+L.age+'세에는</span></div><div class="big2">'+mf(L.tot)+'</div><div class="small">오늘 돈으로 약 '+mf(L.real)+' · 그때 '+bb[0]+' 평균(오늘 기준)의 약 '+Math.round(pcT)+'%</div>'+
+      '<div class="sbar" style="margin-top:12px">'+cats.map(function(c){return '<i class="'+c[2]+'" style="flex:'+Math.max(0,L[c[0]])+'"></i>'}).join('')+'</div><div class="lgd">'+cats.map(function(c){return '<span><i class="'+c[2]+'"></i>'+c[1]+' '+mf(L[c[0]])+'</span>'}).join('')+'</div>'+
+      lineSvg(R.rows)+'<div class="lgd"><span><i style="background:var(--acc)"></i>오늘 돈 기준</span><span><i style="background:var(--mute)"></i>명목 금액</span></div>'+tb+
+      '<div class="bl" style="margin:12px 0 0"><span>새로 넣는 돈 합계</span><b>'+mf(R.paid)+'</b></div>'+
+      '<p class="note">'+R.ret+'세 은퇴 시점까지만 넣는다고 가정했어요. 부채는 지금 그대로라고 가정해요. 수익률은 가정이라 보장되지 않고, 세금·수수료는 반영하지 않았어요. 오늘 돈 기준은 물가상승률 '+pct(S.infl)+'로 계산해요.</p></div>';
+  }
+  var cr=function(a,t,d,v){return '<button class="row'+(v?'':' add')+'" type="button" data-a="'+a+'"><span class="ic">'+(a==='sim:age'?'나':'월')+'</span><span class="t"><b>'+t+'</b><span>'+d+'</span></span><span class="v">'+(a==='sim:age'?T+'세':(v?'월 '+won(v):'정하기'))+'</span></button>'};
+  h+=sec('자산 시뮬레이션',tot?T+'세 자산 계산':'자산 입력 후 계산',tot>0,
+    '<div class="rows">'+cr('sim:age','몇 살의 자산이 궁금해요?','목표 나이를 골라요',1)+cr('sim:pen','연금계좌에 매월 넣는 돈','IRP·연금저축 납입',s.pen)+cr('sim:stock','주식·펀드에 매월 투자하는 돈','적립식 투자',s.stock)+cr('sim:cash','예금·현금으로 매월 모으는 돈','예금 이자율은 위 항목의 성장률을 써요',s.cash)+'</div>'+
+    '<p class="note">각 항목의 성장률은 위 자산 항목에서 바꿔요. 새로 넣는 돈은 그 분야 보유 자산의 평균 성장률로 불어난다고 가정해요.</p>'+sm);
+  if(fin){var r=S.ay/10,mon=fin*r/100/12;
+    h+=sec('자산으로 채울 수 있는 월 소득','월 '+won(mon),0,'<button class="row" type="button" data-a="yield"><span class="ic">%</span><span class="t"><b>금융자산 수익 가정 연 '+pct(S.ay)+'</b><span>눌러서 바꿔요</span></span><span class="v">월 '+won(mon)+'</span></button><p class="note">금융자산 '+mf(fin)+' × 연 '+pct(S.ay)+' ÷ 12로 계산한 단순 값이에요. 수익률은 가정이고 보장되지 않아요.</p>');
+  }
+  h+='<p class="note">입력한 내용은 이 기기의 브라우저에만 저장돼요. 금융상품을 추천하지 않아요.</p>';
+  el.innerHTML=h;foldify(el);
+  var again=function(){render()};
+  el.addEventListener('click',function(e){
+    var m=e.target.closest('[data-m]');if(m){S.reM=m.dataset.m;syncAsset();save();render();return}
+    var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
+    if(a.indexOf('lf:')===0)editLeaf(a.slice(3),again);
+    else if(a==='debt')editDebt(again);
+    else if(a==='sim:age'){var its=range(age+1,100,1,function(v){return v+'세'});openSheet({title:'목표 나이',sub:'이 나이의 자산을 계산해요.',cols:[{items:its,idx:idxOf(its,T),label:'나이'}],ok:function(v){sim().age=v[0];save();render()}})}
+    else if(a.indexOf('sim:')===0){var k=a.slice(4),nm={pen:'연금계좌 매월 납입',stock:'주식·펀드 매월 투자',cash:'예금·현금 매월 저축'}[k],am=range(0,500,5,function(v){return v+'만원'});
+      openSheet({title:nm,sub:'은퇴 시점까지 매달 넣는다고 가정해요.',cols:[{items:am,idx:idxOf(am,sim()[k]||0),label:'월'}],live:function(v){return v[0]?'1년에 <b>'+won(v[0]*12)+'</b>':'0이면 넣지 않아요'},ok:function(v){sim()[k]=v[0];save();render()}})}
+    else if(a==='yield'){var its2=range(10,80,5,pct);openSheet({title:'금융자산 수익 가정',sub:'연 수익률을 가정해 월 소득을 계산해요. 보장되는 값이 아니에요.',cols:[{items:its2,idx:idxOf(its2,S.ay),label:'연 수익률'}],ok:function(v){S.ay=v[0];save();render()}})}
+  });
+  setCta(null,null);
+};
+
 
 render();
 })();
