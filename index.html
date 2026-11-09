@@ -455,6 +455,21 @@ a.lnk{display:inline-block;text-decoration:none}
 .cr .cr1 em.ov{color:var(--gap)}
 .cr .sbar{margin:6px 0 4px}
 .cr small{font-size:11.5px;color:var(--mute)}
+/* v8 카드 */
+.cg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.cd{display:flex;flex-direction:column;gap:2px;text-align:left;min-height:116px;padding:14px;border-radius:20px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;min-width:0}
+.cd:active{transform:scale(.98)}
+.cd small{font-size:12.5px;color:var(--mute);font-weight:700}
+.cd b{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:auto;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cd span{font-size:12.5px;color:var(--mute);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cd.hl{outline-offset:2px}
+.cd.dim2{opacity:.6}
+.agc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.agc .chip{flex:none}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--ok)}
+.dot.bad{background:var(--gap)}
+.ovt{font-style:normal;font-weight:800;color:var(--gap)}.okt{font-style:normal;font-weight:800;color:var(--ok)}
+@media (min-width:900px){.cg{grid-template-columns:repeat(3,minmax(0,1fr))}.pane.hm2{max-width:900px}}
 </style>
 
 <div id="app">
@@ -474,7 +489,7 @@ a.lnk{display:inline-block;text-decoration:none}
 'use strict';
 var KEY='lb-m1-v2';
 var $=function(s,r){return (r||document).querySelector(s)};
-var STEPS=['welcome','login','signup','intro','goal','goalres','birth','labor','i0','i1','i2','i3','i4','i5','i6','i7','gap','lever','add','plan','dash','asis','enjoy','en_health','en_hobby','en_diet','en_trip','home','flow','asset','me','tour'];
+var STEPS=['welcome','login','signup','intro','goal','goalres','birth','labor','i0','i1','i2','i3','i4','i5','i6','i7','gap','lever','add','plan','dash','asis','enjoy','en_health','en_hobby','en_diet','en_trip','home','flow','asset','me','tour','f_diag','f_age','f_calc','f_np','f_pp','f_dv','a_re','a_st','a_pn','a_ca','a_sim','a_inc','e_month','e_fund','e_vid','h_feed'];
 var TABS=[{l:'목표',f:'goal'},{l:'현황',f:'birth'},{l:'Gap',f:'gap'},{l:'챌린지',f:'lever'},{l:'누리기',f:'enjoy'}];
 function stageOf(s){
   if(s==='goal'||s==='goalres')return 0;
@@ -534,7 +549,7 @@ var DEF={step:'welcome',tour:false,wiz:null,diag:false,asset:{},city:0,ay:30,max
   lev:{cut:0,work:{amt:0,until:70},add:{},retDelay:0,npDelay:0},months:6,done:{},en:{sel:{},trip:{},diet:{}}};
 function clone(o){return JSON.parse(JSON.stringify(o))}
 var S=load(),hist=[],resume='welcome';
-function load(){try{var r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&typeof r==='object'&&STEPS.indexOf(r.step)>=0){var d=clone(DEF);Object.keys(r).forEach(function(k){d[k]=r[k]});if(d.max>=STEPS.indexOf('gap'))d.diag=true;return d}}catch(e){}return clone(DEF)}
+function load(){try{var r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&typeof r==='object'&&STEPS.indexOf(r.step)>=0){var d=clone(DEF);Object.keys(r).forEach(function(k){d[k]=r[k]});return d}}catch(e){}return clone(DEF)}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 resume=S.step;S.step='welcome';
 
@@ -1363,16 +1378,14 @@ function picOf(c,a){
   return '갑작스러운 지출 대비. 남으면 다음 달로 넘겨요';
 }
 var FCOL=['s0','s1','s2','s3','s4','s5','s6'];
-SCR.enjoy=function(el){
+SCR.e_fund=function(el){
   var g=maxGap(true);
   el.innerHTML='<h1 class="q" style="margin-top:6px">즐거운 자금,<br>이렇게 써볼까요?</h1><p class="sub">현금흐름·자산 분석은 무료예요. 여기서는 쓸 수 있는 돈을 내 취향에 맞게 나눠 드려요.</p>'+
-  '<div class="sech"><h2>이번 달 계획과 실제</h2><small id="mths"></small></div><div class="card" id="mth"></div>'+
-  '<div class="sech"><h2>자금 조합 만들기</h2><small>관심사별로 추천해요</small></div><div class="pl"><div class="pl1"><div class="card"><div class="bl"><span>1. 매달 즐겁게 쓸 돈</span><b id="fv"></b></div><div class="chips" id="fch" style="margin:10px 0"></div><div class="stp"><button type="button" data-f="-10" aria-label="10만원 줄이기">−</button><output id="fo"></output><button type="button" data-f="10" aria-label="10만원 늘리기">+</button></div></div>'+
+  '<div class="pl"><div class="pl1"><div class="card"><div class="bl"><span>1. 매달 즐겁게 쓸 돈</span><b id="fv"></b></div><div class="chips" id="fch" style="margin:10px 0"></div><div class="stp"><button type="button" data-f="-10" aria-label="10만원 줄이기">−</button><output id="fo"></output><button type="button" data-f="10" aria-label="10만원 늘리기">+</button></div></div>'+
   '<div class="card" style="margin-top:12px"><div class="bl" style="margin-bottom:8px"><span>2. 관심 있는 것 (여러 개)</span></div><div class="chips" id="ich"></div></div></div>'+
   '<div class="pl2"><div class="card"><div class="bl" style="margin-bottom:8px"><span>3. 이렇게 나눠 보세요</span><button class="lnk" id="ar" type="button" hidden>추천으로 되돌리기</button></div><div class="sbar" id="sb"></div><div id="al"></div><p class="note" style="margin-top:8px">비중은 일반적인 은퇴 가계 지출을 참고한 예시 평균이에요. 통계가 아니라 출발점이에요. 직접 조정할 수 있어요.</p></div>'+
   '<div class="card" style="margin-top:12px" id="rs"></div></div></div>'+
-  '<div class="sech"><h2>더 자세히 정하기</h2></div><div class="hub"><button type="button" data-g="en_health"><span class="ic">건</span><div><b>건강</b><span>검진·병원·운동·동호회</span></div></button><button type="button" data-g="en_hobby"><span class="ic">취</span><div><b>취미생활</b><span>음악·미술·배움·모임</span></div></button><button type="button" data-g="en_diet"><span class="ic">식</span><div><b>식단</b><span>병에 맞는 식사 원칙</span></div></button><button type="button" data-g="en_trip"><span class="ic">여</span><div><b>여행</b><span>국내·해외, 혼자·가족</span></div></button></div>'+
-  vidSection('all')+
+  
   '<div class="card sub-c" id="sb2"></div><p class="note">금액은 예시로 잡은 추정치예요. 지역과 수준에 따라 달라요. 상품 추천이나 광고는 하지 않아요.</p>';
   function paint(){
     var f=fundOf(),al=fundAlloc(),sel=S.en.int||{},auto=!(S.en.alloc&&S.en.alloc.f===f);
@@ -1428,6 +1441,7 @@ function monthInfo(){
   return {k:k,f:f,al:al,sp:sp,carry:carry,rem:f+carry-sp,m:m,mon:+k.split('-')[1]};
 }
 function paintMonth(){
+  if(!$('#mth'))return;
   var I=monthInfo(),by={};I.m.it.forEach(function(x){by[x.c]=(by[x.c]||0)+x.a});
   var cats=FC.map(function(c){return [c[0],c[1]]}).concat([['reserve','예비·기타']]);
   var pc=Math.min(100,I.sp/Math.max(1,I.f)*100),over=I.rem<0;
@@ -1465,20 +1479,6 @@ SCR.home=function(el){
 };
 
 /* ===== v6: 접기, 스크롤 유지, 자산 상세·시뮬레이션 ===== */
-/* 현금흐름 맨 위: 자산 한눈에 */
-var _flow0=SCR.flow;
-SCR.flow=function(el){
-  syncAsset();_flow0(el);
-  var tot=totalA(),debt=debtA(),net=tot-debt,fin=finTotal(),h1=el.querySelector('h1');if(!h1)return;
-  var html;
-  if(tot){
-    var g=S.diag?planGap():0,mon=fin*S.ay/10/100/12,sub=S.diag?(g>0?'금융자산이 만드는 월 소득 약 '+won(mon)+' · 부족한 돈 월 '+won(g)+'의 '+Math.min(999,Math.round(mon/g*100))+'%':'금융자산이 만드는 월 소득 약 '+won(mon)+' · 부족한 돈 없음'):'현금흐름을 입력하면 자산과 함께 계산해요';
-    html='<button class="fa" type="button" data-go="asset"><small>내 자산 (자산과 현금흐름이 함께 자라야 해요)</small><b>'+mf(Math.max(0,net))+'</b><span>금융자산 '+mf(fin)+' · 부동산 '+mf(reSum())+(debt?' · 부채 '+mf(debt):'')+'</span><span>'+sub+'</span></button>';
-  }else html='<button class="fa hl" type="button" data-go="asset"><small>내 자산</small><b>아직 입력 전이에요</b><span>자산을 입력하면 현금흐름과 함께 보여 드려요. 눌러서 입력하기 →</span></button>';
-  h1.insertAdjacentHTML('afterend',html);
-  el.querySelector('.fa').onclick=function(){goTab('asset')};
-  insertPc(el);
-};
 /* 접기 */
 var DEFCL=['영상으로 먼저 보기','Gap 줄이기'];
 function mkFold(sec,h,grp,body){
@@ -1510,7 +1510,7 @@ function toggleFold(h){
 }
 $('#screen').addEventListener('click',function(e){var h=e.target.closest('.fh');if(!h||e.target.closest('button,a,input'))return;toggleFold(h)});
 $('#screen').addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('fh')){e.preventDefault();toggleFold(e.target)}});
-['home','flow','enjoy','en_health','en_hobby','en_diet','en_trip'].forEach(function(k){var f=SCR[k];SCR[k]=function(el){f(el);foldify(el)}});
+['en_health','en_hobby','en_diet','en_trip'].forEach(function(k){var f=SCR[k];SCR[k]=function(el){f(el);foldify(el)}});
 
 /* 스크롤 위치 유지: 같은 화면 다시 그리기와 뒤로가기에서 위치를 되살려요 */
 var lastRS=null,posMap={},backNav=false;
@@ -1603,56 +1603,6 @@ function leafRow(k){
   return '<button class="row'+(a?'':' add')+'" type="button" data-a="lf:'+k+'"><span class="ic">'+L.g+'</span><span class="t"><b>'+L.t+'</b><span>'+(a?'연 '+pct(r)+(cu?' 성장':' 성장 가정 (기본값)'):L.d)+'</span></span><span class="v">'+(a?mf(a):'추가')+'</span></button>';
 }
 function sec(title,sum,open,body){return '<div class="sech" data-open="'+(open?1:0)+'"><h2>'+title+'</h2><small>'+sum+'</small></div><div>'+body+'</div>'}
-SCR.asset=function(el){
-  syncAsset();
-  var age=curAge(),tot=totalA(),debt=debtA(),net=tot-debt,fin=finTotal(),b=brk(age),pc=net>0?net/b[1]*100:0;
-  var hero=tot?
-   '<div class="hero2 sm" style="cursor:default"><span class="k">내 순자산'+(debt?' (자산 − 부채)':'')+'</span><span class="b">'+mf(Math.max(0,net))+'</span><span class="cmp"><span class="ct"><i style="width:'+Math.min(100,pc/2).toFixed(1)+'%"></i><u></u></span><small><span>0</span><span>'+b[0]+' 평균 '+mf(b[1])+'</span><span>2배</span></small></span><span class="s">내 나이대 평균의 약 <b>'+Math.round(pc)+'%</b> 수준이에요. 자산 '+mf(tot)+(debt?' · 부채 '+mf(debt):'')+'</span></div>'+
-   '<p class="note">평균은 2025 가계금융복지조사(2025년 3월 말, 가구주 연령대별 평균 자산−부채)예요. 평균은 자산이 큰 가구의 영향을 받아 중앙값보다 높아요. 거주 주택을 포함한 금액으로 비교해요.</p>':
-   '<div class="hero2 sm hl" style="cursor:default"><span class="tagnew">입력이 필요해요</span><span class="b">아직 계산 전이에요</span><span class="s">아래 항목을 열어 가진 자산을 채우면 내 나이대 평균과 비교하고, 원하는 나이의 자산을 계산해 드려요.</span></div>';
-  var h='<h1 class="q" style="margin-top:8px;font-size:24px">내 자산</h1>'+hero;
-  var rm=reMode();
-  h+=sec('부동산',reSum()?mf(reSum()):'입력 전',reSum()>0,
-    '<div class="seg2" style="grid-template-columns:1fr 1fr"><button type="button" data-m="total" aria-pressed="'+(rm==='total')+'">통으로 입력</button><button type="button" data-m="detail" aria-pressed="'+(rm==='detail')+'">세부로 나눠서</button></div><div class="rows">'+(rm==='total'?leafRow('re'):GRP.reD.map(leafRow).join(''))+'</div><p class="note">성장률은 해마다 오르는 비율(가격 상승률)이에요. 모르면 기본값 그대로 두세요.</p>');
-  h+=sec('주식·펀드',sumK(GRP.st)?mf(sumK(GRP.st)):'입력 전',sumK(GRP.st)>0,'<div class="rows">'+GRP.st.map(leafRow).join('')+'</div><p class="note">한 종목은 한 곳에만 넣어요. 연금계좌 안의 주식·펀드는 아래 연금계좌에 넣어요.</p>');
-  h+=sec('연금계좌',sumK(GRP.pn)?mf(sumK(GRP.pn)):'입력 전',sumK(GRP.pn)>0,'<div class="rows">'+GRP.pn.map(leafRow).join('')+'</div>');
-  h+=sec('예금·채권·기타',sumK(GRP.ca)?mf(sumK(GRP.ca)):'입력 전',sumK(GRP.ca)>0,'<div class="rows">'+GRP.ca.map(leafRow).join('')+
-    '<button class="row'+(debt?'':' add')+'" type="button" data-a="debt"><span class="ic">채</span><span class="t"><b>부채 (선택)</b><span>대출 등. 순자산 비교에 써요</span></span><span class="v">'+(debt?'−'+mf(debt):'추가')+'</span></button></div>');
-  /* 시뮬레이션 */
-  var s=sim(),T=Math.max(age+1,s.age||65),sm='';
-  if(tot){
-    var R=simRun(),L=R.rows[R.rows.length-1],bb=brk(L.age),pcT=L.rnet>0?L.rnet/bb[1]*100:0,tp=L.tot||1;
-    var cats=[['re','부동산','s3'],['st','주식·펀드','s1'],['pn','연금계좌','s0'],['ca','예금·채권·기타','s4']];
-    var ages=[age];for(var a=Math.ceil((age+1)/5)*5;a<T;a+=5)ages.push(a);ages.push(T);
-    var tb='<table class="ctab"><thead><tr><th>나이</th><th>총자산</th><th>오늘 돈</th><th>평균 대비</th></tr></thead><tbody>'+ages.map(function(x){var r=R.rows[x-age],p=brk(x)[1];return '<tr><td>'+x+'세</td><td>'+mf(r.tot)+'</td><td>'+mf(r.real)+'</td><td>'+Math.round(Math.max(0,r.rnet)/p*100)+'%</td></tr>'}).join('')+'</tbody></table>';
-    sm='<div class="card"><div class="bl" style="margin:0"><span>'+L.age+'세에는</span></div><div class="big2">'+mf(L.tot)+'</div><div class="small">오늘 돈으로 약 '+mf(L.real)+' · 그때 '+bb[0]+' 평균(오늘 기준)의 약 '+Math.round(pcT)+'%</div>'+
-      '<div class="sbar" style="margin-top:12px">'+cats.map(function(c){return '<i class="'+c[2]+'" style="flex:'+Math.max(0,L[c[0]])+'"></i>'}).join('')+'</div><div class="lgd">'+cats.map(function(c){return '<span><i class="'+c[2]+'"></i>'+c[1]+' '+mf(L[c[0]])+'</span>'}).join('')+'</div>'+
-      lineSvg(R.rows)+'<div class="lgd"><span><i style="background:var(--acc)"></i>오늘 돈 기준</span><span><i style="background:var(--mute)"></i>명목 금액</span></div>'+tb+
-      '<div class="bl" style="margin:12px 0 0"><span>새로 넣는 돈 합계</span><b>'+mf(R.paid)+'</b></div>'+
-      '<p class="note">'+R.ret+'세 은퇴 시점까지만 넣는다고 가정했어요. 부채는 지금 그대로라고 가정해요. 수익률은 가정이라 보장되지 않고, 세금·수수료는 반영하지 않았어요. 오늘 돈 기준은 물가상승률 '+pct(S.infl)+'로 계산해요.</p></div>';
-  }
-  var cr=function(a,t,d,v){return '<button class="row'+(v?'':' add')+'" type="button" data-a="'+a+'"><span class="ic">'+(a==='sim:age'?'나':'월')+'</span><span class="t"><b>'+t+'</b><span>'+d+'</span></span><span class="v">'+(a==='sim:age'?T+'세':(v?'월 '+won(v):'정하기'))+'</span></button>'};
-  h+=sec('자산 시뮬레이션',tot?T+'세 자산 계산':'자산 입력 후 계산',tot>0,
-    '<div class="rows">'+cr('sim:age','몇 살의 자산이 궁금해요?','목표 나이를 골라요',1)+cr('sim:pen','연금계좌에 매월 넣는 돈','IRP·연금저축 납입',s.pen)+cr('sim:stock','주식·펀드에 매월 투자하는 돈','적립식 투자',s.stock)+cr('sim:cash','예금·현금으로 매월 모으는 돈','예금 이자율은 위 항목의 성장률을 써요',s.cash)+'</div>'+
-    '<p class="note">각 항목의 성장률은 위 자산 항목에서 바꿔요. 새로 넣는 돈은 그 분야 보유 자산의 평균 성장률로 불어난다고 가정해요.</p>'+sm);
-  if(fin){var r=S.ay/10,mon=fin*r/100/12;
-    h+=sec('자산으로 채울 수 있는 월 소득','월 '+won(mon),0,'<button class="row" type="button" data-a="yield"><span class="ic">%</span><span class="t"><b>금융자산 수익 가정 연 '+pct(S.ay)+'</b><span>눌러서 바꿔요</span></span><span class="v">월 '+won(mon)+'</span></button><p class="note">금융자산 '+mf(fin)+' × 연 '+pct(S.ay)+' ÷ 12로 계산한 단순 값이에요. 수익률은 가정이고 보장되지 않아요.</p>');
-  }
-  h+='<p class="note">입력한 내용은 이 기기의 브라우저에만 저장돼요. 금융상품을 추천하지 않아요.</p>';
-  el.innerHTML=h;foldify(el);
-  var again=function(){render()};
-  el.addEventListener('click',function(e){
-    var m=e.target.closest('[data-m]');if(m){S.reM=m.dataset.m;syncAsset();save();render();return}
-    var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
-    if(a.indexOf('lf:')===0)editLeaf(a.slice(3),again);
-    else if(a==='debt')editDebt(again);
-    else if(a==='sim:age'){var its=range(age+1,100,1,function(v){return v+'세'});openSheet({title:'목표 나이',sub:'이 나이의 자산을 계산해요.',cols:[{items:its,idx:idxOf(its,T),label:'나이'}],ok:function(v){sim().age=v[0];save();render()}})}
-    else if(a.indexOf('sim:')===0){var k=a.slice(4),nm={pen:'연금계좌 매월 납입',stock:'주식·펀드 매월 투자',cash:'예금·현금 매월 저축'}[k],am=range(0,500,5,function(v){return v+'만원'});
-      openSheet({title:nm,sub:'은퇴 시점까지 매달 넣는다고 가정해요.',cols:[{items:am,idx:idxOf(am,sim()[k]||0),label:'월'}],live:function(v){return v[0]?'1년에 <b>'+won(v[0]*12)+'</b>':'0이면 넣지 않아요'},ok:function(v){sim()[k]=v[0];save();render()}})}
-    else if(a==='yield'){var its2=range(10,80,5,pct);openSheet({title:'금융자산 수익 가정',sub:'연 수익률을 가정해 월 소득을 계산해요. 보장되는 값이 아니에요.',cols:[{items:its2,idx:idxOf(its2,S.ay),label:'연 수익률'}],ok:function(v){S.ay=v[0];save();render()}})}
-  });
-  setCta(null,null);
-};
 
 /* ===== v7: 연금·배당 수령 시뮬레이터 ===== */
 function pcs(){var p=S.pc=S.pc||{};if(p.pAge==null)p.pAge=60;if(!p.pN)p.pN=20;if(p.pr==null)p.pr=30;if(p.dy==null)p.dy=40;if(p.dy2==null)p.dy2=10;return p}
@@ -1685,13 +1635,14 @@ function cmbAt(a){
   return {np:np,pp:pp,dv:dv,ot:ot,tot:np+pp+dv+ot};
 }
 function pcRow(a,t,d,v,sub){return '<button class="row'+(v?'':' add')+'" type="button" data-pc="'+a+'"><span class="ic">'+t.charAt(0)+'</span><span class="t"><b>'+t+'</b><span>'+d+'</span></span><span class="v">'+v+'</span></button>'}
+function pcE(id){return document.getElementById(id)||document.createElement('div')}
 function pcPaint(){
   var p=pcs(),age=curAge(),n=npNormal(),base=npBase(),na=npAge(),M=S.M,pbal=sumK(GRP.pn),stbal=sumK(GRP.st);
   /* 종합 */
   var ages=[55,60,65,70,75,80,85,na,p.pAge].filter(function(a,i,arr){return a>=age&&arr.indexOf(a)===i}).sort(function(a,b){return a-b});
   var rows=ages.map(function(a){var c=cmbAt(a),d=c.tot-M;
     return '<div class="cr"><div class="cr1"><b>'+a+'세</b><span>월 '+won(c.tot)+'</span><em class="'+(d<0?'ov':'')+'">'+(d<0?'부족 '+won(-d):'여유 '+won(d))+'</em></div><div class="sbar">'+[['s0',c.np],['s1',c.pp],['s2',c.dv],['s3',c.ot]].map(function(x){return '<i class="'+x[0]+'" style="flex:'+Math.max(0,x[1])+'"></i>'}).join('')+'<i style="flex:'+Math.max(0.0001,M-c.tot)+';background:var(--line)"></i></div><small>국민연금 '+Math.round(c.np)+' · 개인연금 '+Math.round(c.pp)+' · 배당 '+Math.round(c.dv)+' · 기타 '+Math.round(c.ot)+'</small></div>'}).join('');
-  $('#pcT').innerHTML=(base||pbal||stbal?'':'<p class="note" style="margin:0 0 8px">아래 계산기에서 국민연금 예상액을 입력하고, 자산 탭에서 연금계좌·주식을 입력하면 나이별 합계가 나와요.</p>')+
+  pcE('pcT').innerHTML=(base||pbal||stbal?'':'<p class="note" style="margin:0 0 8px">아래 계산기에서 국민연금 예상액을 입력하고, 자산 탭에서 연금계좌·주식을 입력하면 나이별 합계가 나와요.</p>')+
     '<div class="lgd" style="margin:0 0 8px"><span><i class="s0"></i>국민연금</span><span><i class="s1"></i>개인연금</span><span><i class="s2"></i>배당(세후)</span><span><i class="s3"></i>그 밖의 소득</span></div>'+rows+
     '<p class="note">매달 받는 돈(오늘 돈 기준)과 필요 생활비 '+won(M)+'을 비교해요. 챌린지 반영 전 값이에요. 아래 계산기에서 수령 나이를 바꾸면 여기에 바로 반영돼요.</p>';
   /* 국민연금 */
@@ -1706,7 +1657,7 @@ function pcPaint(){
     h+='<div class="card" style="margin-top:10px"><div class="bl" style="margin:0"><span>'+na+'세부터 받으면</span></div><div class="big2">월 '+won(amt)+'</div><div class="small">'+(na===n?'정상 수령이에요':'정상 수령보다 '+(diff>0?'+':'')+diff+'%')+' · 1년에 '+won(amt*12)+'</div>'+(tx?'<p class="note" style="color:var(--ink)">'+tx+'</p>':'')+tb+'</div>';
   }
   h+='<p class="note">행을 누르면 그 나이로 바로 계산해요. 오늘 돈(물가 연동) 기준이에요. 조기 수령은 소득이 있는 일을 하면 연금이 줄 수 있어요. 실제 금액은 국민연금공단 안내로 확인하세요.</p>';
-  $('#pcN').innerHTML=h;
+  pcE('pcN').innerHTML=h;
   /* 개인연금 */
   var pe=pensionAt(p.pAge,p.pN);
   h=pcRow('p:age','개인연금 수령 시작 나이','55세부터 받을 수 있어요',p.pAge+'세')+pcRow('p:n','수령 기간','10년 이상으로 나눠 받아요',p.pN+'년')+pcRow('p:r','수령 중 운용 수익률','받는 동안 남은 돈의 연 수익 가정',pct(p.pr));
@@ -1717,7 +1668,7 @@ function pcPaint(){
     h+='<div class="card" style="margin-top:10px"><div class="bl" style="margin:0"><span>'+pe.s+'세부터 '+p.pN+'년간 받으면</span></div><div class="big2">월 '+won(pe.net)+'<small style="font-size:14px;font-weight:600;color:var(--mute)"> 세후</small></div><div class="small">세전 월 '+won(pe.pre)+' · 평균 연금소득세 '+(pe.tax*100).toFixed(1)+'% · 수령 합계 '+mf(pe.total)+'</div></div>';
   }else h+='<p class="note">자산 탭에서 IRP·연금저축 등 연금계좌를 입력하면 계산해요.</p><button class="lnk" type="button" data-pc="goasset">자산 입력하러 가기 →</button>';
   h+='<p class="note">오늘 돈 기준이에요. 연금수령 요건(55세 이후, 10년 이상 분할)을 지키면 연금소득세 55~69세 5.5%, 70~79세 4.4%, 80세 이상 3.3%가 일반적으로 적용돼요. 수령 한도를 넘거나 연 수령액이 일정 기준(연 1,500만원 안팎)을 넘으면 세금이 달라질 수 있어요. 세법은 바뀔 수 있으니 세무 전문가에게 확인하세요.</p>';
-  $('#pcP').innerHTML=h;
+  pcE('pcP').innerHTML=h;
   /* 배당 */
   h=pcRow('d:y1','배당주 배당률','연 배당금 ÷ 주가',pct(p.dy))+pcRow('d:y2','그 밖의 주식 배당률','미국·성장주·지수 등',pct(p.dy2));
   if(stbal){
@@ -1725,17 +1676,9 @@ function pcPaint(){
     h+='<table class="ctab"><thead><tr><th>나이</th><th>주식 평가액</th><th>월 배당(세후)</th></tr></thead><tbody>'+da.map(function(a){var d=divAt(a);return '<tr><td>'+(a===age?'지금':a+'세')+'</td><td>'+mf(d.bal)+'</td><td>'+won(d.net)+'</td></tr>'}).join('')+'</tbody></table>';
   }else h+='<p class="note">자산 탭에서 주식·펀드를 입력하면 계산해요.</p><button class="lnk" type="button" data-pc="goasset">자산 입력하러 가기 →</button>';
   h+='<p class="note">주식은 은퇴 시점까지 매월 투자액(자산 탭 시뮬레이션)과 성장률을 반영하고, 그 뒤로는 그대로 보유한다고 가정해요. 배당소득세 15.4%를 뺀 오늘 돈 기준이에요. 금융소득이 연 2,000만원을 넘으면 종합과세 대상이 될 수 있어요.</p>';
-  $('#pcD').innerHTML=h;
+  pcE('pcD').innerHTML=h;
 }
-function insertPc(el){
-  var anchor=el.querySelector('.fa');if(!anchor)return;
-  var w=document.createElement('div');w.id='pcw';
-  w.innerHTML='<div class="sech" data-open="1"><h2>나이별 현금흐름 종합</h2><small>수령 시기를 바꿔 보세요</small></div><div id="pcT"></div>'+
-   '<div class="sech" data-open="1"><h2>국민연금 계산기</h2><small>조기·연기 수령</small></div><div id="pcN"></div>'+
-   '<div class="sech" data-open="0"><h2>개인연금 계산기</h2><small>IRP·연금저축</small></div><div id="pcP"></div>'+
-   '<div class="sech" data-open="0"><h2>주식·배당 계산기</h2><small>배당 소득</small></div><div id="pcD"></div>';
-  anchor.insertAdjacentElement('afterend',w);
-  pcPaint();foldify(w);
+function bindPc(w){
   w.addEventListener('click',function(e){
     var b=e.target.closest('[data-pc]');if(!b)return;var a=b.dataset.pc,p=pcs(),again=function(){pcPaint()};
     if(a==='goasset'){goTab('asset');return}
@@ -1750,6 +1693,221 @@ function insertPc(el){
     else if(a==='d:y1'||a==='d:y2'){var k=a==='d:y1'?'dy':'dy2',dr=range(0,120,5,pct);openSheet({title:a==='d:y1'?'배당주 배당률':'그 밖의 주식 배당률',sub:'주가 대비 연 배당금 비율을 가정해요.',cols:[{items:dr,idx:idxOf(dr,p[k]),label:'연 배당률'}],ok:function(v){p[k]=v[0];save();again()}})}
   });
 }
+
+/* ===== v8: 카드형 구조. 홈=요약, 탭=카드 모음, 상세=하위 페이지 ===== */
+var HOMEI=STEPS.indexOf('home');
+var _go1=go;go=function(step,isBack){var pm=S.max;_go1(step,isBack);if(STEPS.indexOf(step)>=HOMEI){S.max=pm;save()}};
+var SUBP={f_diag:'flow',f_age:'flow',f_calc:'flow',f_np:'flow',f_pp:'flow',f_dv:'flow',a_re:'asset',a_st:'asset',a_pn:'asset',a_ca:'asset',a_sim:'asset',a_inc:'asset',e_month:'enjoy',e_fund:'enjoy',e_vid:'enjoy',en_health:'enjoy',en_hobby:'enjoy',en_diet:'enjoy',en_trip:'enjoy',h_feed:'home'};
+var _chrome2=chrome;
+chrome=function(){
+  _chrome2();
+  var par=SUBP[S.step];if(!par)return;
+  var nv=$('#nav');$('#top').hidden=false;$('#back').hidden=false;$('#tabs').hidden=true;$('#tabs').innerHTML='';
+  nv.hidden=false;nv.innerHTML=TABSCREENS.map(function(t){return '<button type="button" data-t="'+t+'"'+(t===par?' aria-current="page"':'')+'><svg viewBox="0 0 24 24" aria-hidden="true">'+NAVI[t]+'</svg>'+NAVL[t]+'</button>'}).join('');
+  $('#app').classList.add('tv');
+};
+var _back2=back;
+back=function(){if(!hist.length&&SUBP[S.step]){backNav=true;goTab(SUBP[S.step]);return}_back2()};
+
+function card(act,label,val,sub,o){o=o||{};return '<button class="cd'+(o.hl?' hl':'')+(o.dim?' dim2':'')+'" type="button" data-go="'+act+'"><small>'+esc(label)+'</small><b>'+esc(val)+'</b><span>'+esc(sub||'')+'</span></button>'}
+function cg(a){return '<div class="cg">'+a.join('')+'</div>'}
+function bindCards(el,fn){el.addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(!b)return;var g=b.dataset.go;if(fn&&fn(g)===true)return;if(TABSCREENS.indexOf(g)>=0)goTab(g);else go(g)})}
+function ptitle(t,s){return '<h1 class="q" style="margin-top:6px;font-size:24px">'+t+'</h1>'+(s?'<p class="sub">'+s+'</p>':'')}
+
+/* ---------- 홈: 입력·진단 결과를 한눈에 ---------- */
+function totalNet(){var t=totalA();return t-debtA()}
+SCR.home=function(el){
+  syncAsset();
+  var done=!!S.diag,age=curAge(),tot=totalA(),net=tot-debtA(),b=brk(age),pcA=net>0?Math.round(net/b[1]*100):0;
+  var lv=planLev(),g=planGap(),nd=need(lv),inc=incAt(Reff(),lv),pc=Math.min(100,inc/Math.max(1,nd)*100),I=monthInfo(),sel=S.en.fs;
+  var hero=done?
+   '<button class="hero2 sm" id="hr" type="button"><span class="k">은퇴까지 '+retInfo().txt+(retInfo().d>0?' · '+retInfo().ym:'')+' · '+Reff()+'세 은퇴</span><span class="b">'+(g>0?'매달 '+won(g)+' 부족해요':'목표를 채울 수 있어요')+'</span><span class="tr"><i style="width:'+pc.toFixed(1)+'%"></i></span><span class="s">'+Reff()+'세 때 받을 돈 '+won(inc)+' / 필요 '+won(nd)+' (오늘 돈 기준)</span></button>':
+   '<button class="hero2 hl" id="hr" type="button"><span class="tagnew">입력이 필요해요</span><span class="b">아직 계산 전이에요</span><span class="s">은퇴 시기와 받을 돈을 입력하지 않아서 부족한 현금흐름을 계산하지 못했어요. 입력하면 나이대별로 계산해 드려요.</span><span class="cta2">'+(S.wiz&&S.wiz!=='intro'?'이어서 입력하기':'현금흐름 입력하기')+' →</span></button>';
+  var cp=chalProgress(),vc=vidCards('all'),v0=vc.length?vc[dayIdx()%vc.length]:null;
+  var A=Math.max(Reff(),npAge()),hasP=npBase()||sumK(GRP.pn)||sumK(GRP.st),cm=hasP?cmbAt(A):null,sr,L=null;
+  if(tot){sr=simRun();L=sr.rows[sr.rows.length-1]}
+  var cards=[
+    card('asset','내 자산',tot?mf(Math.max(0,net)):'입력 전',tot?b[0]+' 평균의 '+pcA+'%':'눌러서 입력하기',{hl:!tot}),
+    card('flow','현금흐름',done?(g>0?'월 '+won(g)+' 부족':'목표 충족'):'입력 전',done?Reff()+'세 은퇴 기준':'눌러서 입력하기',{hl:!done}),
+    card(hasP?'f_age':'f_calc','연금 수령',cm?'월 '+won(cm.tot):'계산해 보기',cm?A+'세 기준 · 연금과 배당':'국민연금·개인연금 수령 시기'),
+    card('a_sim','자산 성장',L?L.age+'세 '+mf(L.tot):'입력 후 계산',L?'오늘 돈으로 '+mf(L.real):'가진 자산을 먼저 입력해요'),
+    card(done&&lv?'dash':'lever','챌린지',done&&lv&&cp.total?cp.d+' / '+cp.total:'시작하기',done&&lv&&cp.total?Math.round(cp.d/cp.total*100)+'% 진행':'Gap 줄이기',{dim:!done}),
+    card(sel?'e_month':'e_fund','이번 달 즐거운 자금',sel?'남은 돈 '+mf(Math.max(0,I.rem)):'정해보기',sel?'쓴 돈 '+mf(I.sp)+' / 계획 '+mf(I.f):'관심사별로 나눠 드려요',{hl:!sel&&false}),
+    card('e_vid','오늘의 영상',v0?v0.t:'영상',v0?VCAT[v0.c]:'건강·맛집·여행'),
+    card('h_feed','오늘의 읽을거리','읽을거리','제도·은퇴준비·후기'),
+    card('enjoy','즐거운 생활','건강·취미·여행','식단과 여행까지 정해요')
+  ];
+  el.innerHTML='<div class="hd"><div><div class="dt" id="dt"></div><div class="tm" id="tm"></div></div><button class="wx" id="wx" type="button" aria-label="날씨, 지역 바꾸기"></button></div>'+hero+cg(cards);
+  el.classList.add('hm2');
+  function tick(){var d=new Date();$('#dt').textContent=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'});$('#tm').textContent=d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'})}
+  tick();timers.push(setInterval(tick,15000));
+  function wx(){$('#wx').innerHTML=wxHtml(null,S.city);getWx(S.city,function(d){var bb=$('#wx');if(bb&&S.step==='home')bb.innerHTML=d?wxHtml(d,S.city):'<svg viewBox="0 0 24 24" aria-hidden="true">'+WI.cloud+'</svg><div><b>'+esc(CITIES[S.city][0])+'</b><span>날씨를 불러올 수 없어요</span></div>'})}
+  wx();$('#wx').onclick=function(){editCity(function(){render()})};
+  $('#hr').onclick=function(){if(done)goTab('flow');else go(S.wiz||'intro')};
+  bindCards(el,function(g){if(!done&&(g==='dash'||g==='lever')){go(S.wiz||'intro');return true}});
+  loadNews(function(nc){if(S.step!=='home'||!nc.items.length)return;var x=nc.items[dayIdx()%nc.items.length],c=el.querySelector('[data-go="h_feed"]');if(c){c.querySelector('b').textContent=x.t;c.querySelector('span').textContent=CATS[x.c]||''}});
+};
+
+/* ---------- 현금흐름 ---------- */
+SCR.flow=function(el){
+  syncAsset();
+  var tot=totalA(),net=tot-debtA(),fin=finTotal(),mon=fin*S.ay/10/100/12;
+  if(!S.diag){
+    el.innerHTML=ptitle('내 현금흐름')+'<div class="hero2 hl" style="cursor:default"><span class="tagnew">입력이 필요해요</span><span class="b">아직 계산 전이에요</span><span class="s">은퇴 시기, 지금 받는 돈, 앞으로 받을 연금을 입력하면 나이대별로 부족한 돈을 계산하고 챌린지를 만들어 드려요. 3분이면 충분해요.</span><span class="cta2">'+((S.wiz&&S.wiz!=='intro')?'이어서 입력하기':'현금흐름 입력하기')+' →</span></div>'+
+    cg([card('f_diag','진단 입력','시작하기','은퇴 시기부터 차례로',{hl:true}),card('f_age','나이별 현금흐름','입력 전','진단 후 확인',{dim:true}),card('f_calc','연금·배당 계산기','계산기 4가지','수령 시기를 바꿔 봐요'),card('lever','Gap 줄이기','입력 전','진단 후 시작',{dim:true}),card('asset','내 자산',tot?mf(Math.max(0,net)):'입력 전',tot?'자산과 함께 봐요':'자산 먼저 입력해도 좋아요')]);
+    bindCards(el,function(g){if(g==='f_diag'||g==='f_age'||g==='lever'){go(S.wiz||'intro');return true}});
+    el.querySelector('.hero2').onclick=function(){go(S.wiz||'intro')};
+    setCta(null,null);return;
+  }
+  var lv=planLev(),g=planGap(),nd=need(lv),inc=incAt(Reff(),lv),pc=Math.min(100,inc/Math.max(1,nd)*100),A=S.fa||Reff(),c=cmbAt(A),cp=chalProgress(),d=c.tot-S.M;
+  el.innerHTML=ptitle('내 현금흐름')+
+   '<div class="hero2 sm" role="status" style="cursor:default"><span class="k">'+Reff()+'세 은퇴 · 매달 '+won(nd)+' 필요</span><span class="b">'+(g>0?'매달 '+won(g)+' 부족':'목표를 채울 수 있어요')+'</span><span class="tr"><i style="width:'+pc.toFixed(1)+'%"></i></span><span class="s">'+(lv?'챌린지 계획까지 반영한 결과예요':'진단을 고치면 바로 다시 계산해요')+'</span></div>'+
+   cg([card('f_diag','진단 입력',Reff()+'세 은퇴','월 '+won(S.M)+' 필요 · 눌러서 수정'),
+       card('f_age','나이별 현금흐름',A+'세 월 '+won(c.tot),d<0?'필요보다 '+won(-d)+' 부족':'필요보다 '+won(d)+' 여유'),
+       card('f_calc','연금·배당 계산기','계산기 4가지','국민연금·개인연금·배당·자산'),
+       card('lever','Gap 줄이기',levCount()?levCount()+'가지 선택':'고르기','덜 쓰기·일하기·소득 만들기'),
+       card(lv?'dash':'lever','챌린지',lv&&cp.total?cp.d+' / '+cp.total:'시작하기',lv&&cp.total?Math.round(cp.d/cp.total*100)+'% 진행':'Gap 줄이기 챌린지'),
+       card('asset','내 자산',tot?mf(Math.max(0,net)):'입력 전',tot?'금융자산 월 소득 약 '+won(mon):'자산과 함께 자라야 해요',{hl:!tot})]);
+  bindCards(el);setCta(null,null);
+};
+SCR.f_diag=function(el){
+  var age=curAge(),yrs=Math.max(0,Reff()-age),h=ptitle('진단 입력','눌러서 바로 수정해요. 고치면 모든 계산에 바로 반영돼요.')+'<div class="rows">'+
+   rowH('goal','목','은퇴 시기 · 필요 현금',Reff()+'세 은퇴 · 오늘 돈 기준',won(S.M))+
+   rowH('birth','생','생년월',S.by+'년 '+S.bm+'월 · 만 '+age+'세 · 은퇴까지 '+yrs+'년','수정')+
+   rowH('labor','일','근로소득',S.labor?'세후 매달':'지금 일해서 버는 돈',S.labor?won(S.labor):'없음');
+  TYPES.forEach(function(t){var x=S.inc[t.k];var d=x?(t.m==='cont'?(x.e===-1?S.R+'세 전까지':'은퇴 후에도 계속'):x.s+'세부터 '+(x.e===999?'평생':(x.e-x.s)+'년간')):'받을 돈이 있다면 추가해요';h+=rowH('inc:'+t.k,t.g,t.t,d,x?won(x.amt):'추가',!x)});
+  el.innerHTML=h+'</div>';
+  [].forEach.call(el.querySelectorAll('[data-a]'),function(b){b.onclick=function(){var a=b.dataset.a,again=function(){render()};
+    if(a==='goal')editGoal(again);else if(a==='birth')editBirth(again);else if(a==='labor')editLabor(again);else if(a.indexOf('inc:')===0)editInc(a.slice(4),again)}});
+  setCta(null,null);
+};
+SCR.f_age=function(el){
+  var age=curAge(),na=npAge(),p=pcs();
+  var ages=[55,60,65,70,75,80,85,Reff(),na,p.pAge].filter(function(a,i,r){return a>=age&&r.indexOf(a)===i}).sort(function(a,b){return a-b});
+  var sel=ages.indexOf(S.fa)>=0?S.fa:(ages.indexOf(Reff())>=0?Reff():ages[0]);
+  var chips=ages.map(function(a){var c=cmbAt(a);return '<button type="button" class="chip" data-fa="'+a+'" aria-pressed="'+(a===sel)+'"><i class="dot'+(c.tot<S.M?' bad':'')+'"></i>'+a+'세</button>'}).join('');
+  var c=cmbAt(sel),d=c.tot-S.M,M=S.M;
+  var lines=[['s0','국민연금',c.np,npBase()?'시작 '+na+'세':'예상액 입력 전'],['s1','개인연금(세후)',c.pp,sumK(GRP.pn)?'시작 '+p.pAge+'세 · '+p.pN+'년':'연금계좌 입력 전'],['s2','배당(세후)',c.dv,sumK(GRP.st)?'주식 보유 기준':'주식 입력 전'],['s3','그 밖의 소득',c.ot,'진단에 입력한 소득']];
+  el.innerHTML=ptitle('나이별 현금흐름','나이를 고르면 그때 받는 돈과 필요한 돈을 비교해요. 점이 주황이면 부족해요.')+'<div class="chips agc">'+chips+'</div>'+
+   '<div class="card" style="margin-top:12px"><div class="bl" style="margin:0"><span>'+sel+'세에는 매달</span><em class="'+(d<0?'ovt':'okt')+'">'+(d<0?'부족 '+won(-d):'여유 '+won(d))+'</em></div><div class="big2">'+won(c.tot)+'</div><div class="small">필요 생활비 '+won(M)+' (오늘 돈 기준)</div>'+
+   '<div class="sbar" style="margin-top:12px">'+lines.map(function(l){return '<i class="'+l[0]+'" style="flex:'+Math.max(0,l[2])+'"></i>'}).join('')+'<i style="flex:'+Math.max(0.0001,M-c.tot)+';background:var(--line)"></i></div>'+
+   '<div class="rows" style="margin-top:10px">'+lines.map(function(l){return '<div class="alr"><span class="ic '+l[0]+'" style="width:12px;height:12px;border-radius:4px"></span><div class="t"><b>'+l[1]+'</b><small>'+l[3]+'</small></div><b>'+won(l[2])+'</b></div>'}).join('')+'</div></div>'+
+   '<button class="lnk" type="button" data-go="f_calc" style="margin-top:8px">수령 시기를 바꿔서 계산해 보기 →</button><p class="note">챌린지(Gap 줄이기)를 반영하기 전 값이에요.</p>';
+  el.addEventListener('click',function(e){var b=e.target.closest('[data-fa]');if(b){S.fa=+b.dataset.fa;save();render()}});
+  bindCards(el);setCta(null,null);
+};
+SCR.f_calc=function(el){
+  var na=npAge(),p=pcs(),pe=pensionAt(p.pAge,p.pN),pbal=sumK(GRP.pn),stbal=sumK(GRP.st),tot=totalA(),T=Math.max(curAge()+1,sim().age||65),L=null;
+  if(tot){var r=simRun();L=r.rows[r.rows.length-1]}
+  el.innerHTML=ptitle('계산기','원하는 계산기를 골라 수령 시기와 수익률을 바꿔 가며 계산해요.')+
+   cg([card('f_np','국민연금',npBase()?'월 '+won(npAmt(na)):'예상액 입력',npBase()?na+'세 시작 · 정상 '+npNormal()+'세':'조기·연기 수령 비교'),
+       card('f_pp','개인연금',pbal?'월 '+won(pe.net):'자산 입력 필요',pbal?pe.s+'세부터 '+p.pN+'년 · 세후':'IRP·연금저축'),
+       card('f_dv','주식·배당',stbal?'월 '+won(divAt(Reff()).net):'자산 입력 필요',stbal?Reff()+'세 · 세후 배당':'배당 소득'),
+       card('a_sim','자산 시뮬레이션',L?T+'세 '+mf(L.tot):'입력 후 계산',L?'오늘 돈으로 '+mf(L.real):'목표 나이의 자산')]);
+  bindCards(el);setCta(null,null);
+};
+SCR.f_np=function(el){el.innerHTML=ptitle('국민연금 계산기')+'<div id="pcN"></div>';pcPaint();bindPc(el);setCta(null,null)};
+SCR.f_pp=function(el){el.innerHTML=ptitle('개인연금 계산기')+'<div id="pcP"></div>';pcPaint();bindPc(el);setCta(null,null)};
+SCR.f_dv=function(el){el.innerHTML=ptitle('주식·배당 계산기')+'<div id="pcD"></div>';pcPaint();bindPc(el);setCta(null,null)};
+
+/* ---------- 자산 ---------- */
+function aHero(){
+  var age=curAge(),tot=totalA(),debt=debtA(),net=tot-debt,b=brk(age),pc=net>0?net/b[1]*100:0;
+  return tot?
+   '<div class="hero2 sm" style="cursor:default"><span class="k">내 순자산'+(debt?' (자산 − 부채)':'')+'</span><span class="b">'+mf(Math.max(0,net))+'</span><span class="cmp"><span class="ct"><i style="width:'+Math.min(100,pc/2).toFixed(1)+'%"></i><u></u></span><small><span>0</span><span>'+b[0]+' 평균 '+mf(b[1])+'</span><span>2배</span></small></span><span class="s">내 나이대 평균의 약 <b>'+Math.round(pc)+'%</b> 수준이에요. 자산 '+mf(tot)+(debt?' · 부채 '+mf(debt):'')+'</span></div>':
+   '<div class="hero2 sm hl" style="cursor:default"><span class="tagnew">입력이 필요해요</span><span class="b">아직 계산 전이에요</span><span class="s">아래 카드를 열어 가진 자산을 채우면 내 나이대 평균과 비교하고, 원하는 나이의 자산을 계산해 드려요.</span></div>';
+}
+var AN='<p class="note">평균은 2025 가계금융복지조사(2025년 3월 말, 가구주 연령대별 평균 자산−부채)예요. 평균은 자산이 큰 가구의 영향을 받아 중앙값보다 높아요. 거주 주택을 포함한 금액으로 비교해요.</p>';
+SCR.asset=function(el){
+  syncAsset();
+  var tot=totalA(),debt=debtA(),s=sim(),T=Math.max(curAge()+1,s.age||65),L=null,fin=finTotal(),mon=fin*S.ay/10/100/12;
+  if(tot){var r=simRun();L=r.rows[r.rows.length-1]}
+  el.innerHTML=ptitle('내 자산')+aHero()+(tot?AN:'')+
+   cg([card('a_re','부동산',reSum()?mf(reSum()):'입력 전',reMode()==='detail'?'세부로 입력':'통으로 입력'),
+       card('a_st','주식·펀드',sumK(GRP.st)?mf(sumK(GRP.st)):'입력 전','미국·한국·배당·성장·지수'),
+       card('a_pn','연금계좌',sumK(GRP.pn)?mf(sumK(GRP.pn)):'입력 전','IRP·연금저축·기타'),
+       card('a_ca','예금·채권·기타',sumK(GRP.ca)?mf(sumK(GRP.ca)):'입력 전',debt?'부채 '+mf(debt):'부채도 입력할 수 있어요'),
+       card('a_sim','자산 시뮬레이션',L?T+'세 '+mf(L.tot):'입력 후 계산',L?'오늘 돈으로 '+mf(L.real):'원하는 나이의 자산'),
+       card('a_inc','자산이 만드는 월 소득',fin?'월 '+won(mon):'입력 전',fin?'금융자산 수익 가정 연 '+pct(S.ay):'금융자산을 입력해요')]);
+  bindCards(el);setCta(null,null);
+};
+function bindAsset(el){
+  el.addEventListener('click',function(e){
+    var m=e.target.closest('[data-m]');if(m){S.reM=m.dataset.m;syncAsset();save();render();return}
+    var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a,again=function(){render()},age=curAge();
+    if(a.indexOf('lf:')===0)editLeaf(a.slice(3),again);
+    else if(a==='debt')editDebt(again);
+    else if(a==='sim:age'){var T=Math.max(age+1,sim().age||65),its=range(age+1,100,1,function(v){return v+'세'});openSheet({title:'목표 나이',sub:'이 나이의 자산을 계산해요.',cols:[{items:its,idx:idxOf(its,T),label:'나이'}],ok:function(v){sim().age=v[0];save();render()}})}
+    else if(a.indexOf('sim:')===0){var k=a.slice(4),nm={pen:'연금계좌 매월 납입',stock:'주식·펀드 매월 투자',cash:'예금·현금 매월 저축'}[k],am=range(0,500,5,function(v){return v+'만원'});
+      openSheet({title:nm,sub:'은퇴 시점까지 매달 넣는다고 가정해요.',cols:[{items:am,idx:idxOf(am,sim()[k]||0),label:'월'}],live:function(v){return v[0]?'1년에 <b>'+won(v[0]*12)+'</b>':'0이면 넣지 않아요'},ok:function(v){sim()[k]=v[0];save();render()}})}
+    else if(a==='yield'){var its2=range(10,80,5,pct);openSheet({title:'금융자산 수익 가정',sub:'연 수익률을 가정해 월 소득을 계산해요. 보장되는 값이 아니에요.',cols:[{items:its2,idx:idxOf(its2,S.ay),label:'연 수익률'}],ok:function(v){S.ay=v[0];save();render()}})}
+  });
+}
+SCR.a_re=function(el){syncAsset();var rm=reMode();
+  el.innerHTML=ptitle('부동산','통으로 넣거나 세부로 나눠 입력해요.')+'<div class="seg2" style="grid-template-columns:1fr 1fr"><button type="button" data-m="total" aria-pressed="'+(rm==='total')+'">통으로 입력</button><button type="button" data-m="detail" aria-pressed="'+(rm==='detail')+'">세부로 나눠서</button></div><div class="rows">'+(rm==='total'?leafRow('re'):GRP.reD.map(leafRow).join(''))+'</div><p class="note">성장률은 해마다 오르는 비율(가격 상승률)이에요. 모르면 기본값 그대로 두세요. 거주 주택을 포함해서 입력하면 나이대 평균과 맞게 비교돼요.</p>';
+  bindAsset(el);setCta(null,null)};
+SCR.a_st=function(el){syncAsset();el.innerHTML=ptitle('주식·펀드','종류별로 나눠 입력해요. 성장률은 원하면 바꿔요.')+'<div class="rows">'+GRP.st.map(leafRow).join('')+'</div><p class="note">한 종목은 한 곳에만 넣어요. 연금계좌 안의 주식·펀드는 연금계좌에 넣어요.</p>';bindAsset(el);setCta(null,null)};
+SCR.a_pn=function(el){syncAsset();el.innerHTML=ptitle('연금계좌','IRP, 연금저축펀드, 기타로 나눠 입력해요.')+'<div class="rows">'+GRP.pn.map(leafRow).join('')+'</div><p class="note">연금 수령 시기별 계산은 현금흐름의 개인연금 계산기에서 해요.</p>';bindAsset(el);setCta(null,null)};
+SCR.a_ca=function(el){syncAsset();var debt=debtA();el.innerHTML=ptitle('예금·채권·기타')+'<div class="rows">'+GRP.ca.map(leafRow).join('')+'<button class="row'+(debt?'':' add')+'" type="button" data-a="debt"><span class="ic">채</span><span class="t"><b>부채 (선택)</b><span>대출 등. 순자산 비교에 써요</span></span><span class="v">'+(debt?'−'+mf(debt):'추가')+'</span></button></div>';bindAsset(el);setCta(null,null)};
+SCR.a_inc=function(el){syncAsset();var fin=finTotal(),mon=fin*S.ay/10/100/12;
+  el.innerHTML=ptitle('자산이 만드는 월 소득')+(fin?'<button class="row" type="button" data-a="yield"><span class="ic">%</span><span class="t"><b>금융자산 수익 가정 연 '+pct(S.ay)+'</b><span>눌러서 바꿔요</span></span><span class="v">월 '+won(mon)+'</span></button><p class="note">금융자산 '+mf(fin)+' × 연 '+pct(S.ay)+' ÷ 12로 계산한 단순 값이에요. 수익률은 가정이고 보장되지 않아요.</p>':'<p class="note">자산 탭에서 금융자산을 입력하면 계산해요.</p>');
+  bindAsset(el);setCta(null,null)};
+SCR.a_sim=function(el){
+  syncAsset();
+  var age=curAge(),tot=totalA(),s=sim(),T=Math.max(age+1,s.age||65),sm='';
+  if(tot){
+    var R=simRun(),L=R.rows[R.rows.length-1],bb=brk(L.age),pcT=L.rnet>0?L.rnet/bb[1]*100:0;
+    var cats=[['re','부동산','s3'],['st','주식·펀드','s1'],['pn','연금계좌','s0'],['ca','예금·채권·기타','s4']];
+    var ages=[age];for(var a=Math.ceil((age+1)/5)*5;a<T;a+=5)ages.push(a);ages.push(T);
+    var tb='<table class="ctab"><thead><tr><th>나이</th><th>총자산</th><th>오늘 돈</th><th>평균 대비</th></tr></thead><tbody>'+ages.map(function(x){var r=R.rows[x-age],p=brk(x)[1];return '<tr><td>'+x+'세</td><td>'+mf(r.tot)+'</td><td>'+mf(r.real)+'</td><td>'+Math.round(Math.max(0,r.rnet)/p*100)+'%</td></tr>'}).join('')+'</tbody></table>';
+    sm='<div class="card" style="margin-top:12px"><div class="bl" style="margin:0"><span>'+L.age+'세에는</span></div><div class="big2">'+mf(L.tot)+'</div><div class="small">오늘 돈으로 약 '+mf(L.real)+' · 그때 '+bb[0]+' 평균(오늘 기준)의 약 '+Math.round(pcT)+'%</div>'+
+      '<div class="sbar" style="margin-top:12px">'+cats.map(function(c){return '<i class="'+c[2]+'" style="flex:'+Math.max(0,L[c[0]])+'"></i>'}).join('')+'</div><div class="lgd">'+cats.map(function(c){return '<span><i class="'+c[2]+'"></i>'+c[1]+' '+mf(L[c[0]])+'</span>'}).join('')+'</div>'+
+      lineSvg(R.rows)+'<div class="lgd"><span><i style="background:var(--acc)"></i>오늘 돈 기준</span><span><i style="background:var(--mute)"></i>명목 금액</span></div>'+tb+
+      '<div class="bl" style="margin:12px 0 0"><span>새로 넣는 돈 합계</span><b>'+mf(R.paid)+'</b></div>'+
+      '<p class="note">'+R.ret+'세 은퇴 시점까지만 넣는다고 가정했어요. 부채는 지금 그대로라고 가정해요. 수익률은 가정이라 보장되지 않고, 세금·수수료는 반영하지 않았어요. 오늘 돈 기준은 물가상승률 '+pct(S.infl)+'로 계산해요.</p></div>';
+  }else sm='<p class="note">자산 탭에서 가진 자산을 먼저 입력해요.</p>';
+  var cr=function(a,t,d,v){return '<button class="row'+(v?'':' add')+'" type="button" data-a="'+a+'"><span class="ic">'+(a==='sim:age'?'나':'월')+'</span><span class="t"><b>'+t+'</b><span>'+d+'</span></span><span class="v">'+(a==='sim:age'?T+'세':(v?'월 '+won(v):'정하기'))+'</span></button>'};
+  el.innerHTML=ptitle('자산 시뮬레이션','각 항목의 성장률은 자산 항목에서 바꿔요.')+'<div class="rows">'+cr('sim:age','몇 살의 자산이 궁금해요?','목표 나이를 골라요',1)+cr('sim:pen','연금계좌에 매월 넣는 돈','IRP·연금저축 납입',s.pen)+cr('sim:stock','주식·펀드에 매월 투자하는 돈','적립식 투자',s.stock)+cr('sim:cash','예금·현금으로 매월 모으는 돈','예금 이자율은 항목의 성장률을 써요',s.cash)+'</div>'+sm;
+  bindAsset(el);setCta(null,null);
+};
+
+/* ---------- 즐거운 생활 ---------- */
+SCR.enjoy=function(el){
+  var I=monthInfo(),sel=S.en.fs,f=fundOf(),al=fundAlloc(),top=FC.map(function(c){return [c[1],al[c[0]]]}).sort(function(a,b){return b[1]-a[1]})[0],tr=0;for(var k in S.en.trip)tr+=S.en.trip[k]||0;var dn=Object.keys(S.en.diet).length;
+  el.innerHTML=ptitle('즐거운 생활','쓸 돈을 정하고, 건강·취미·여행을 골라요.')+
+   cg([card('e_month','이번 달 계획과 실제',sel?'남은 돈 '+mf(Math.max(0,I.rem)):'기록해 보기',sel?'쓴 돈 '+mf(I.sp)+' / 계획 '+mf(I.f):'계획과 실제를 비교해요'),
+       card('e_fund','자금 조합','월 '+won(f),sel?'가장 큰 몫: '+top[0]+' '+top[1]+'만':'관심사별로 나눠 드려요',{hl:!sel}),
+       card('en_health','건강',cntSel(HEALTH)?cntSel(HEALTH)+'개 선택':'고르기','검진·병원·운동·동호회'),
+       card('en_hobby','취미생활',cntSel(HOBBY)?cntSel(HOBBY)+'개 선택':'고르기','음악·미술·배움·모임'),
+       card('en_diet','식단',dn?dn+'가지 선택':'고르기','병에 맞는 식사 원칙'),
+       card('en_trip','여행',tr?'연 '+tr+'회':'정하기','국내·해외, 혼자·가족'),
+       card('e_vid','영상','영상 보기','건강·맛집·취미·여행')]);
+  bindCards(el);setCta(null,null);
+};
+SCR.e_fund_wrap=null;
+SCR.e_month=function(el){
+  el.innerHTML=ptitle('이번 달 계획과 실제')+'<div class="card" id="mth"></div>';
+  paintMonth();
+  el.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    if(b.id==='spadd')addSpSheet(function(){render()});
+    else if(b.dataset.sd!=null){var mm=S.en.sp&&S.en.sp[ymk()];if(mm){mm.it.splice(+b.dataset.sd,1);save();render()}}});
+  setCta(null,null);
+};
+SCR.e_vid=function(el){el.innerHTML=ptitle('영상','YouTube로 이동해요.')+vidSection('all');setCta(null,null)};
+SCR.h_feed=function(el){
+  el.innerHTML=ptitle('읽을거리')+'<small id="fu" class="small"></small><div class="fchips" id="fc" style="margin-top:8px"></div><div class="mgrid" id="fd"></div><p class="note">읽을거리는 지금 에디터 카드만 보여요. 뉴스와 은퇴 후기는 원문 링크와 함께 요약해 자동으로 채울 예정이에요.</p>';
+  loadNews(function(nc){
+    if(S.step!=='h_feed')return;var items=nc.items;$('#fu').textContent=nc.updated?'업데이트 '+nc.updated:'';
+    function paint(){
+      $('#fc').innerHTML=[['all','전체']].concat(Object.keys(CATS).map(function(k){return [k,CATS[k]]})).map(function(p){return '<button type="button" class="chip" data-k="'+p[0]+'" aria-pressed="'+(feedCat===p[0])+'">'+p[1]+'</button>'}).join('');
+      $('#fd').innerHTML=feedHtml(items);
+      [].forEach.call($('#fc').querySelectorAll('.chip'),function(b){b.onclick=function(){feedCat=b.dataset.k;paint()}});
+      [].forEach.call($('#fd').querySelectorAll('.mg'),function(b){b.onclick=function(){var x=items[+b.dataset.n];openInfo({tag:CATS[x.c],title:x.t,sub:x.s,list:Array.isArray(x.p)?x.p.slice(0,8).map(String):[],link:safeUrl(x.u),meta:(x.src||'')+(x.d?' · '+x.d:'')})}});
+    }
+    paint();
+  });
+  setCta(null,null);
+};
 
 
 render();
