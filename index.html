@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta property="og:type" content="website"><meta property="og:title" content="Life Butler · 취향에 맞는 은퇴 설계"><meta property="og:description" content="현금흐름부터 즐거운 노후까지, 3분 무료 진단"><meta property="og:image" content="https://taeli74.github.io/retire.github.io/og.png"><meta property="og:url" content="https://taeli74.github.io/retire.github.io/"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://taeli74.github.io/retire.github.io/og.png"><title>Life Butler</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta property="og:type" content="website"><meta property="og:title" content="Life Butler · 취향에 맞는 은퇴 설계"><meta property="og:description" content="현금흐름부터 즐거운 생활까지, 3분 무료 진단"><meta property="og:image" content="https://taeli74.github.io/retire.github.io/og.png"><meta property="og:url" content="https://taeli74.github.io/retire.github.io/"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://taeli74.github.io/retire.github.io/og.png"><title>Life Butler</title>
 <meta name="description" content="원하는 노후 현금흐름을 만들고, 지금과의 Gap을 줄여가는 모바일 시범 서비스">
 <link rel="stylesheet" href="fonts.css"><style>html{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}</style></head><body><style>
 
@@ -426,6 +426,25 @@ a.lnk{display:inline-block;text-decoration:none}
 .lgd{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12.5px;color:var(--mute)}
 .lgd i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
 .big2{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+
+.fa{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;border:2px solid var(--acc);background:var(--acc-soft);border-radius:20px;padding:14px 16px;cursor:pointer;margin:6px 0 12px}
+.fa small{font-size:12.5px;color:var(--mute);font-weight:600}
+.fa b{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.fa span{font-size:13px;color:var(--mute)}
+.remb{display:flex;flex-direction:column;margin:12px 0}
+.remb small{font-size:12.5px;color:var(--mute);font-weight:600}
+.remb b{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.remb b.ov,.mr em.ov{color:var(--gap)}
+.remb span{font-size:12.5px;color:var(--mute)}
+.mr{padding:8px 0;border-top:1px solid var(--line)}
+.mr .mt1{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mr .mt1 b{font-size:14.5px}
+.mr .mt1 span{flex:1;font-size:12px;color:var(--mute)}
+.mr em{font-style:normal;font-size:12.5px;font-weight:800;color:var(--acc)}
+.abar i.ovb{background:var(--gap)}
+.sl{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.sl span{flex:1;color:var(--mute)}
+.sl button{border:0;background:transparent;color:var(--mute);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:4px}
 </style>
 
 <div id="app">
@@ -637,7 +656,7 @@ function setCta(main,sec,third){
 }
 var TABSCREENS=['home','flow','asset','enjoy','me'];
 var NAVI={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',flow:'<path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/>',asset:'<path d="M3 9l9-5 9 5M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',enjoy:'<path d="M12 21s-7-4.6-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.4-7 10-7 10z"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'};
-var NAVL={home:'홈',flow:'현금흐름',asset:'자산',enjoy:'즐거운 노후',me:'내 정보'};
+var NAVL={home:'홈',flow:'현금흐름',asset:'자산',enjoy:'즐거운 생활',me:'내 정보'};
 function chrome(){
   var st=stageOf(S.step),tb=$('#tabs'),isTab=TABSCREENS.indexOf(S.step)>=0,nv=$('#nav');
   $('#top').hidden=isTab;
@@ -805,7 +824,7 @@ SCR.lever=function(el){
     $('#bn').innerHTML=g===0?'<div class="banner">Gap 0. 목표를 채우는 설계가 완성됐어요</div>':'';
     var rows=[
       ['cut','조금 덜 쓰는 삶','목표 생활비를 줄이면 Gap도 줄어요',S.lev.cut>0,'−'+S.lev.cut+'만'],
-      ['work','일하는 노후','은퇴 후 언제까지 월 얼마를 벌지 정해요',w.amt>0,'+'+w.amt+'만 · '+w.until+'세까지'],
+      ['work','일하는 삶','은퇴 후 언제까지 월 얼마를 벌지 정해요',w.amt>0,'+'+w.amt+'만 · '+w.until+'세까지'],
       ['add','정기 수입 더 만들기','은퇴 시점에 받을 금융소득을 종류별로 정해요',na>0,na+'가지 · 월 +'+as.pv+'만']
     ];
     $('#lv').innerHTML=rows.map(function(r){return '<button class="lv'+(r[3]?' on':'')+'" type="button" data-k="'+r[0]+'"><span class="t"><b>'+r[1]+'</b><span>'+r[2]+'</span></span>'+pill(r[3],r[4])+'</button>'}).join('');
@@ -865,7 +884,7 @@ SCR.plan=function(el){
     $('#lv').innerHTML='<b>'+m+'개월</b> 동안';
     if(S.lev.cut>0)h+='<div class="bd"><div class="h"><span>덜 쓰기</span><b>매달 '+won(S.lev.cut)+'</b></div><div class="s">'+m+'개월이면 '+won(S.lev.cut*m)+'을 아껴요</div></div>';
     if(Object.keys(S.lev.add).length)h+='<div class="bd"><div class="h"><span>정기 수입 만들기</span><b>매달 '+won(as.pm)+' 적립</b></div><div class="s">'+m+'개월이면 '+won(as.pm*m)+'이 쌓여요</div></div>';
-    if(S.lev.work.amt>0)h+='<div class="bd"><div class="h"><span>일하는 노후</span><b>월 '+won(S.lev.work.amt)+'</b></div><div class="s">'+m+'개월 동안 할 수 있는 일을 알아보고 준비해요</div></div>';
+    if(S.lev.work.amt>0)h+='<div class="bd"><div class="h"><span>일하는 삶</span><b>월 '+won(S.lev.work.amt)+'</b></div><div class="s">'+m+'개월 동안 할 수 있는 일을 알아보고 준비해요</div></div>';
     if(S.lev.retDelay>0||S.lev.npDelay>0)h+='<div class="bd"><div class="h"><span>시기 조정</span><b>'+(S.lev.retDelay?'은퇴 +'+S.lev.retDelay+'년 ':'')+(S.lev.npDelay?'연금 +'+S.lev.npDelay+'년':'')+'</b></div><div class="s">계획을 가족과 이야기하며 확정해요</div></div>';
     $('#pv').innerHTML=h;
   }
@@ -920,7 +939,7 @@ function cntSel(list){var n=0;list.forEach(function(g){g.it.forEach(function(i){
 SCR.enjoy=function(el){
   var g=maxGap(true),sm=enSum(),tr=0;for(var k in S.en.trip)tr+=S.en.trip[k]||0;var dn=Object.keys(S.en.diet).length;
   var pc=Math.min(100,sm.all/Math.max(1,S.M-S.lev.cut)*100);
-  el.innerHTML='<h1 class="q" style="margin-top:6px">즐거운 노후를<br>그려볼까요?</h1><p class="sub">'+(g===0?'Gap을 모두 채웠어요. 이제 쓰고 싶은 곳을 정해요.':'Gap이 남아 있어도, 쓰고 싶은 곳을 미리 정해 볼 수 있어요.')+'</p>'+
+  el.innerHTML='<h1 class="q" style="margin-top:6px">즐거운 생활를<br>그려볼까요?</h1><p class="sub">'+(g===0?'Gap을 모두 채웠어요. 이제 쓰고 싶은 곳을 정해요.':'Gap이 남아 있어도, 쓰고 싶은 곳을 미리 정해 볼 수 있어요.')+'</p>'+
   '<div class="card" style="margin-bottom:14px"><div class="bl"><span>내 월 계획</span><b>'+won(sm.all)+' / '+won(S.M-S.lev.cut)+'</b></div><div class="tr"><i class="f" style="width:'+pc.toFixed(1)+'%"></i></div></div>'+
   '<div class="hub"><button type="button" data-g="en_health"><span class="ic">건</span><div><b>건강</b><span>'+(cntSel(HEALTH)?cntSel(HEALTH)+'개 선택':'검진·병원·운동·동호회')+'</span></div></button>'+
   '<button type="button" data-g="en_hobby"><span class="ic">취</span><div><b>취미생활</b><span>'+(cntSel(HOBBY)?cntSel(HOBBY)+'개 선택':'음악·미술·배움·모임')+'</span></div></button>'+
@@ -992,7 +1011,7 @@ function pickLev(k,done){
       ok:function(v){S.lev.cut=v[0];save();done()}});
   }else if(k==='work'){
     var am=range(0,300,10,function(v){return v===0?'선택 안 함':'+'+won(v)}),un=range(Reff(),80,1,function(v){return v+'세까지'});
-    openSheet({title:'일하는 노후',sub:'은퇴 후 소일거리로 벌 월 소득과, 언제까지 일할지 골라요.',cols:[{items:am,idx:idxOf(am,S.lev.work.amt),label:'월 소득'},{items:un,idx:idxOf(un,S.lev.work.until),label:'일하는 나이'}],
+    openSheet({title:'일하는 삶',sub:'은퇴 후 소일거리로 벌 월 소득과, 언제까지 일할지 골라요.',cols:[{items:am,idx:idxOf(am,S.lev.work.amt),label:'월 소득'},{items:un,idx:idxOf(un,S.lev.work.until),label:'일하는 나이'}],
       live:function(v){var o=S.lev.work;S.lev.work={amt:v[0],until:v[1]};var g=maxGap(true);S.lev.work=o;return v[0]>0?'<b>'+Reff()+'~'+v[1]+'세</b> 월 <b>+'+won(v[0])+'</b> → 남는 Gap <b>'+won(g)+'</b>':'선택하지 않으면 그대로예요'},
       del:S.lev.work.amt>0?function(){S.lev.work={amt:0,until:70};save();done()}:null,delLabel:'선택 해제',
       ok:function(v){S.lev.work={amt:v[0],until:v[1]};save();done()}});
@@ -1091,7 +1110,7 @@ function wxHtml(d,city){
 }
 
 /* 매거진 피드 */
-var NEWS=[{"c": "law", "t": "국민연금, 늦춰 받으면 연 7.2%씩 늘어요", "s": "받는 시기를 최대 5년 늦추면 매년 7.2%씩 더해져 최대 36% 많이 받아요. 앞당겨 받으면 연 6%씩, 최대 30% 줄어요.", "p": ["연기연금: 1년 늦출 때마다 수령액 +7.2% (최대 5년)", "조기노령연금: 1년 앞당길 때마다 수령액 −6% (최대 5년)", "정상 수령 나이는 출생연도에 따라 60~65세예요", "제도는 바뀔 수 있어요. 국민연금공단에서 꼭 확인하세요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "prep", "t": "은퇴와 연금 사이, 소득 공백을 확인하세요", "s": "55세에 은퇴해도 국민연금은 60세 중반부터 나와요. 그 사이에 쓸 돈을 따로 계획해야 해요.", "p": ["퇴직연금·IRP·연금저축으로 공백을 이어 붙일 수 있어요", "일하는 노후로 공백을 줄일 수도 있어요", "Life Butler의 Gap 화면에서 나이대별로 확인해요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "inv", "t": "같은 월 100만원도 성격이 달라요", "s": "이자, 배당, 월세, 연금은 들어오는 방식이 달라요. 얼마나 꾸준한지, 물가를 따라가는지, 언제 끝나는지를 함께 보세요.", "p": ["이자: 안정적이지만 물가를 따라가지 못할 수 있어요", "배당: 기업 사정에 따라 줄거나 늘 수 있어요", "임대: 공실과 관리 부담이 있어요", "연금: 기간이 정해진 것과 평생 받는 것이 있어요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "prep", "t": "20년 뒤 100만원의 가치는?", "s": "물가가 매년 2.5% 오르면 20년 뒤 100만원의 구매력은 약 61만원이에요. 그래서 오늘 돈 기준과 미래 명목가치를 함께 봐요.", "p": ["오늘 돈 기준(현재가치): 지금 물가로 느끼는 금액", "명목가치: 그때 실제로 받는 금액", "정기 수입 만들기 화면에서 두 가지를 바꿔 볼 수 있어요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "prep", "t": "은퇴 첫 해, 돈보다 먼저 만들 것은 하루 루틴", "s": "일과 사람이 한꺼번에 줄어드는 시기예요. 매주 반복할 활동을 먼저 정해 두면 생활과 소비가 안정돼요.", "p": ["주 3회 몸을 움직이는 활동", "주 1회 사람을 만나는 모임", "월 1회 새로운 경험"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "story", "t": "은퇴 후기와 뉴스는 곧 채워져요", "s": "은퇴한 분들의 이야기와 금융 제도 뉴스를 자동으로 모아 보여줄 자리예요. 지금은 에디터 카드만 보여요.", "p": ["뉴스와 후기는 원문 링크와 함께 요약해 보여줄 예정이에요"], "src": "준비 중", "d": "2026-11-09"}];
+var NEWS=[{"c": "law", "t": "국민연금, 늦춰 받으면 연 7.2%씩 늘어요", "s": "받는 시기를 최대 5년 늦추면 매년 7.2%씩 더해져 최대 36% 많이 받아요. 앞당겨 받으면 연 6%씩, 최대 30% 줄어요.", "p": ["연기연금: 1년 늦출 때마다 수령액 +7.2% (최대 5년)", "조기노령연금: 1년 앞당길 때마다 수령액 −6% (최대 5년)", "정상 수령 나이는 출생연도에 따라 60~65세예요", "제도는 바뀔 수 있어요. 국민연금공단에서 꼭 확인하세요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "prep", "t": "은퇴와 연금 사이, 소득 공백을 확인하세요", "s": "55세에 은퇴해도 국민연금은 60세 중반부터 나와요. 그 사이에 쓸 돈을 따로 계획해야 해요.", "p": ["퇴직연금·IRP·연금저축으로 공백을 이어 붙일 수 있어요", "일하는 삶로 공백을 줄일 수도 있어요", "Life Butler의 Gap 화면에서 나이대별로 확인해요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "inv", "t": "같은 월 100만원도 성격이 달라요", "s": "이자, 배당, 월세, 연금은 들어오는 방식이 달라요. 얼마나 꾸준한지, 물가를 따라가는지, 언제 끝나는지를 함께 보세요.", "p": ["이자: 안정적이지만 물가를 따라가지 못할 수 있어요", "배당: 기업 사정에 따라 줄거나 늘 수 있어요", "임대: 공실과 관리 부담이 있어요", "연금: 기간이 정해진 것과 평생 받는 것이 있어요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "prep", "t": "20년 뒤 100만원의 가치는?", "s": "물가가 매년 2.5% 오르면 20년 뒤 100만원의 구매력은 약 61만원이에요. 그래서 오늘 돈 기준과 미래 명목가치를 함께 봐요.", "p": ["오늘 돈 기준(현재가치): 지금 물가로 느끼는 금액", "명목가치: 그때 실제로 받는 금액", "정기 수입 만들기 화면에서 두 가지를 바꿔 볼 수 있어요"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "prep", "t": "은퇴 첫 해, 돈보다 먼저 만들 것은 하루 루틴", "s": "일과 사람이 한꺼번에 줄어드는 시기예요. 매주 반복할 활동을 먼저 정해 두면 생활과 소비가 안정돼요.", "p": ["주 3회 몸을 움직이는 활동", "주 1회 사람을 만나는 모임", "월 1회 새로운 경험"], "src": "Life Butler 에디터", "d": "2026-11-09"}, {"c": "story", "t": "은퇴 후기와 뉴스는 곧 채워져요", "s": "은퇴한 분들의 이야기와 금융 제도 뉴스를 자동으로 모아 보여줄 자리예요. 지금은 에디터 카드만 보여요.", "p": ["뉴스와 후기는 원문 링크와 함께 요약해 보여줄 예정이에요"], "src": "준비 중", "d": "2026-11-09"}];
 var CATS={law:'제도·뉴스',prep:'은퇴준비',inv:'투자·금융',story:'후기'};
 var newsCache=null,feedCat='all';
 function okItem(x){return x&&typeof x.t==='string'&&typeof x.s==='string'&&CATS[x.c]}
@@ -1122,8 +1141,8 @@ SCR.home=function(el){
   el.innerHTML='<div class="hd"><div><div class="dt" id="dt"></div><div class="tm" id="tm"></div></div><button class="wx" id="wx" type="button" aria-label="날씨, 지역 바꾸기"></button></div>'+hero+
   '<div class="qrow"><button class="qc'+(done?'':' dimc')+'" data-g="flow" type="button"><small>이번 챌린지</small><b>'+(done?(cp.total&&lv?cp.d+' / '+cp.total:'시작하기'):'진단 후 시작')+'</b></button>'+
   '<button class="qc'+(hasA?'':' hl')+'" data-g="asset" type="button"><small>내 자산</small><b>'+(fin?mf(fin):hasA?'입력됨':'입력하기')+'</b></button>'+
-  '<button class="qc" data-g="enjoy" type="button"><small>즐거운 노후 계획</small><b>'+(ep.all>0?'월 '+won(ep.all):'정해보기')+'</b></button></div>'+
-  '<div class="sech"><h2>오늘의 노후 영상</h2><button class="lnk" id="vm" type="button">더 보기</button></div><div class="vrow" id="vr"></div>'+
+  '<button class="qc" data-g="enjoy" type="button"><small>즐거운 생활 계획</small><b>'+(ep.all>0?'월 '+won(ep.all):'정해보기')+'</b></button></div>'+
+  '<div class="sech"><h2>오늘의 영상</h2><button class="lnk" id="vm" type="button">더 보기</button></div><div class="vrow" id="vr"></div>'+
   '<div class="sech"><h2>오늘의 읽을거리</h2><small id="fu"></small></div><div class="fchips" id="fc"></div><div class="mgrid" id="fd"></div>'+
   '<p class="note">읽을거리는 지금 에디터 카드만 보여요. 뉴스와 은퇴 후기는 원문 링크와 함께 요약해 자동으로 채울 예정이에요. 영상은 YouTube로 이동해요.</p>';
   function tick(){var d=new Date();$('#dt').textContent=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'});$('#tm').textContent=d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'})}
@@ -1171,7 +1190,7 @@ SCR.flow=function(el){
     h+=rowH('inc:'+t.k,t.g,t.t,d,x?won(x.amt):'추가',!x)});
   h+='</div><div class="sech"><h2>Gap 줄이기</h2><small>여러 개 선택할 수 있어요</small></div><div class="rows">'+
   rowH('lv:cut','절','조금 덜 쓰는 삶','목표 생활비 줄이기',S.lev.cut>0?'−'+won(S.lev.cut):'고르기',!(S.lev.cut>0))+
-  rowH('lv:work','일','일하는 노후','은퇴 후 소일거리 소득',w.amt>0?'+'+won(w.amt)+' · '+w.until+'세까지':'고르기',!(w.amt>0))+
+  rowH('lv:work','일','일하는 삶','은퇴 후 소일거리 소득',w.amt>0?'+'+won(w.amt)+' · '+w.until+'세까지':'고르기',!(w.amt>0))+
   rowH('lv:add','정','정기 수입 더 만들기','은퇴 시점에 받을 금융소득',na?na+'가지 · +'+won(as.pv):'고르기',!na)+
   rowH('lv:ret','늦','은퇴 늦추기','은퇴 시기를 조금 미뤄요',S.lev.retDelay>0?'+'+S.lev.retDelay+'년':'고르기',!(S.lev.retDelay>0))+
   (S.inc.np?rowH('lv:np','연','국민연금 늦춰 받기','1년마다 수령액 +7.2%',S.lev.npDelay>0?'+'+S.lev.npDelay+'년':'고르기',!(S.lev.npDelay>0)):'')+
@@ -1337,6 +1356,7 @@ var FCOL=['s0','s1','s2','s3','s4','s5','s6'];
 SCR.enjoy=function(el){
   var g=maxGap(true);
   el.innerHTML='<h1 class="q" style="margin-top:6px">즐거운 자금,<br>이렇게 써볼까요?</h1><p class="sub">현금흐름·자산 분석은 무료예요. 여기서는 쓸 수 있는 돈을 내 취향에 맞게 나눠 드려요.</p>'+
+  '<div class="sech"><h2>이번 달 계획과 실제</h2><small id="mths"></small></div><div class="card" id="mth"></div>'+
   '<div class="sech"><h2>자금 조합 만들기</h2><small>관심사별로 추천해요</small></div><div class="pl"><div class="pl1"><div class="card"><div class="bl"><span>1. 매달 즐겁게 쓸 돈</span><b id="fv"></b></div><div class="chips" id="fch" style="margin:10px 0"></div><div class="stp"><button type="button" data-f="-10" aria-label="10만원 줄이기">−</button><output id="fo"></output><button type="button" data-f="10" aria-label="10만원 늘리기">+</button></div></div>'+
   '<div class="card" style="margin-top:12px"><div class="bl" style="margin-bottom:8px"><span>2. 관심 있는 것 (여러 개)</span></div><div class="chips" id="ich"></div></div></div>'+
   '<div class="pl2"><div class="card"><div class="bl" style="margin-bottom:8px"><span>3. 이렇게 나눠 보세요</span><button class="lnk" id="ar" type="button" hidden>추천으로 되돌리기</button></div><div class="sbar" id="sb"></div><div id="al"></div><p class="note" style="margin-top:8px">비중은 일반적인 은퇴 가계 지출을 참고한 예시 평균이에요. 통계가 아니라 출발점이에요. 직접 조정할 수 있어요.</p></div>'+
@@ -1361,6 +1381,7 @@ SCR.enjoy=function(el){
       (g>0?'<p class="note" style="margin:10px 0 0">아직 매달 '+won(g)+'가 부족해요. 즐거운 자금은 Gap을 줄인 뒤에 쓰는 걸 권해요.</p>':'<p class="note" style="margin:10px 0 0">Gap이 없어요. 이 금액이 목표 생활비 안에 들어 있는지는 현금흐름에서 확인해 보세요.</p>');
     $('#rs').innerHTML='<div class="bl" style="margin-bottom:6px"><span>이렇게 쓰면, 1년 뒤 모습</span><b>연 '+wb(f*12)+'</b></div><ul class="todo">'+lines+'</ul><div class="bl" style="margin:10px 0 0"><span>10년이면 (오늘 돈 기준)</span><b>'+wb(f*120)+'</b></div>'+link;
     $('#sb2').innerHTML='<b>이 조합, 계속 받아 보고 싶다면</b><p class="note" style="margin:6px 0 10px;color:var(--ink)">매달 자금과 취향이 바뀔 때마다 조합을 다시 짜 주고, 한 달 쓴 결과와 비교해 드리는 맞춤 관리는 구독 또는 1회 이용으로 준비하고 있어요. 현금흐름·자산 분석은 계속 무료예요. 지금은 결제 기능이 없어요.</p><button class="btn alt" id="intr" type="button" style="height:48px;font-size:15px">'+(S.en.intr?'관심 표시했어요. 준비되면 안내해요':'관심 있어요')+'</button>';
+    paintMonth();
     var gf=$('#gof');if(gf)gf.onclick=function(){go(S.wiz||'intro')};
     $('#intr').onclick=function(){S.en.intr=S.en.intr?0:1;save();paint()};
   }
@@ -1371,30 +1392,82 @@ SCR.enjoy=function(el){
     else if(b.dataset.i){S.en.int=S.en.int||{};if(S.en.int[b.dataset.i])delete S.en.int[b.dataset.i];else S.en.int[b.dataset.i]=1;S.en.alloc=null;S.en.fs=1;save();paint()}
     else if(b.dataset.c){var al=JSON.parse(JSON.stringify(fundAlloc())),d=+b.dataset.d,nv=Math.max(0,al[b.dataset.c]+d),dl=nv-al[b.dataset.c];if(dl===0||al.reserve-dl<0)return;al[b.dataset.c]=nv;al.reserve-=dl;S.en.alloc={f:fundOf(),v:al};S.en.fs=1;save();paint()}
     else if(b.id==='ar'){S.en.alloc=null;save();paint()}
+    else if(b.id==='spadd'){addSpSheet(function(){render()})}
+    else if(b.dataset.sd!=null){var mm=S.en.sp&&S.en.sp[ymk()];if(mm){mm.it.splice(+b.dataset.sd,1);save();render()}}
   });
   [].forEach.call(el.querySelectorAll('.hub button'),function(b){b.onclick=function(){go(b.dataset.g)}});
   paint();setCta(null,null);
 };
 
-var TIPS=[['오늘 20분만 걸어요','비용은 0원이에요. 건강 습관이 쌓이면 즐거운 자금에서 운동 몫을 다른 곳에 쓸 수 있어요.'],['이번 달 가고 싶은 곳 한 곳','거창하지 않아도 좋아요. 하나만 정해 두면 여행 몫이 목적을 갖게 돼요.'],['최근 한 달 중 즐거웠던 지출 하나 떠올리기','돈이 아깝지 않았던 순간이 내 취향의 단서예요.'],['건강검진 일정 확인하기','마지막 검진이 언제였는지 달력에서 확인해 봐요.'],['배우고 싶은 것 한 가지 적어 보기','악기, 그림, 외국어 무엇이든 좋아요. 적어 두는 것부터 시작해요.'],['가족이나 친구와 식사 약속 잡기','모임 몫을 쓰는 가장 쉬운 방법이에요.'],['고정 지출 하나만 점검하기','통신비, 보험료처럼 매달 나가는 돈 중 하나만 살펴봐요.'],['국민연금 예상 수령액 확인하기','국민연금공단 "내 연금 알아보기"에서 예상 수령액을 조회해 볼 수 있어요.'],['안 가본 동네 한 바퀴','비용 없이 새 기분을 얻는 방법이에요.'],['이번 달 즐거운 자금 점검하기','쓰고 남은 돈은 다음 달로 넘겨도 돼요. 얼마 남았는지만 확인해요.'],['노후 영상 하나 보고 메모하기','마음에 드는 장면이 있으면 나중에 내 취향이 돼요.'],['감사한 일 세 가지 떠올리기','즐거운 노후는 작은 만족을 알아차리는 데서 시작해요.']];
-function ymd(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+
+/* 이번 달 지출 기록 */
+function ymk(d){d=d||new Date();return d.getFullYear()+'-'+(d.getMonth()+1)}
+function spMonth(k){return S.en.sp&&S.en.sp[k]}
+function spSpent(k){var m=spMonth(k);return m?m.it.reduce(function(s,x){return s+x.a},0):0}
+function spCarry(k){var c=0;if(!S.en.sp)return 0;Object.keys(S.en.sp).forEach(function(q){if(q<k&&/^\d+-\d+$/.test(q)){var a=q.split('-'),b=k.split('-');if(+a[0]*12+ +a[1]<+b[0]*12+ +b[1])c+=(S.en.sp[q].f||0)-spSpent(q)}});return c}
+function addSp(c,a){var k=ymk();S.en.sp=S.en.sp||{};var m=S.en.sp[k]=S.en.sp[k]||{f:fundOf(),it:[]};m.f=fundOf();m.it.push({c:c,a:a,d:new Date().getDate()});save()}
+function addSpSheet(done){
+  var cats=FC.map(function(c,i){return {v:i,l:c[1]}}).concat([{v:FC.length,l:'예비·기타'}]),am=[],v;
+  for(v=1;v<=100;v++)am.push({v:v,l:v+'만원'});for(v=105;v<=300;v+=5)am.push({v:v,l:v+'만원'});
+  openSheet({title:'쓴 돈 기록',sub:'분야와 금액을 골라요. 대략이면 충분해요.',cols:[{items:cats,idx:0,label:'분야'},{items:am,idx:idxOf(am,5),label:'금액'}],
+    live:function(x){return '<b>'+cats[x[0]].l+'</b> '+x[1]+'만원'},
+    ok:function(x){addSp(x[0]<FC.length?FC[x[0]][0]:'reserve',x[1]);done()}});
+}
+function monthInfo(){
+  var k=ymk(),f=fundOf(),al=fundAlloc(),sp=spSpent(k),carry=spCarry(k),m=spMonth(k)||{it:[]};
+  return {k:k,f:f,al:al,sp:sp,carry:carry,rem:f+carry-sp,m:m,mon:+k.split('-')[1]};
+}
+function paintMonth(){
+  var I=monthInfo(),by={};I.m.it.forEach(function(x){by[x.c]=(by[x.c]||0)+x.a});
+  var cats=FC.map(function(c){return [c[0],c[1]]}).concat([['reserve','예비·기타']]);
+  var pc=Math.min(100,I.sp/Math.max(1,I.f)*100),over=I.rem<0;
+  var rows=cats.map(function(c){var p=I.al[c[0]]||0,a=by[c[0]]||0,d=p-a;
+    return '<div class="mr"><div class="mt1"><b>'+c[1]+'</b><span>계획 '+p+'만 · 실제 '+a+'만</span><em class="'+(d<0?'ov':'')+'">'+(d<0?'초과 '+(-d):'남음 '+d)+'만</em></div><div class="abar"><i class="'+(d<0?'ovb':'')+'" style="width:'+Math.min(100,a/Math.max(1,p)*100).toFixed(1)+'%"></i></div></div>'}).join('');
+  var list=I.m.it.map(function(x,i){return [x,i]}).reverse().slice(0,6).map(function(p){var c=cats.filter(function(c){return c[0]===p[0].c})[0];return '<div class="sl"><span>'+I.mon+'/'+p[0].d+' · '+(c?c[1]:'')+'</span><b>'+p[0].a+'만원</b><button type="button" data-sd="'+p[1]+'" aria-label="기록 삭제">삭제</button></div>'}).join('');
+  $('#mth').innerHTML='<div class="bl"><span>'+I.mon+'월 쓴 돈 / 계획</span><b>'+I.sp+'만 / '+I.f+'만원</b></div><div class="tr"><i class="f" style="width:'+pc.toFixed(1)+'%;'+(over?'background:var(--gap)':'')+'"></i></div>'+
+    '<div class="remb"><small>'+(over?'초과한 돈':'남은 돈')+'</small><b class="'+(over?'ov':'')+'">'+mf(Math.abs(I.rem))+'</b>'+(I.carry?'<span>지난달까지 '+(I.carry>0?'남은 돈 ':'초과 ')+mf(Math.abs(I.carry))+' 포함</span>':'<span>쓰고 남은 돈은 다음 달로 넘겨요</span>')+'</div>'+
+    (S.en.fs?'':'<p class="note" style="margin:0 0 8px">아직 자금을 정하지 않아 기본값(월 100만원)으로 보여줘요. 아래에서 정할 수 있어요.</p>')+
+    '<div class="mrs">'+rows+'</div>'+(list?'<div class="sech" style="margin:14px 2px 4px"><h2 style="font-size:15px">최근 기록</h2></div>'+list:'<p class="note">아직 기록이 없어요. 쓴 돈을 기록하면 계획과 비교해 드려요.</p>')+
+    '<button class="btn" id="spadd" type="button" style="margin-top:12px;height:50px;font-size:16px">쓴 돈 기록하기</button>';
+  var ms=$('#mths');if(ms)ms.textContent=(I.rem<0?'초과 ':'남은 돈 ')+mf(Math.abs(I.rem));
+}
+
+function retInfo(){
+  var rd=new Date(S.by+Reff(),S.bm-1,1),t=new Date();t.setHours(0,0,0,0);
+  var d=Math.ceil((rd-t)/864e5),a=Math.abs(d),y=Math.floor(a/365.25),mo=Math.floor((a-y*365.25)/30.44);
+  return {d:d,txt:(d>0?'D-':d<0?'D+':'D-')+(d===0?'day':a.toLocaleString('ko-KR')+'일'),ym:(y?y+'년 ':'')+mo+'개월'};
+}
 var _home0=SCR.home;
 SCR.home=function(el){
   _home0(el);
-  var now=new Date(),td=ymd(now),yd=ymd(new Date(now.getTime()-864e5));
-  if(S.en.vd!==td){S.en.vs=(S.en.vd===yd?(S.en.vs||0)+1:1);S.en.vd=td;save()}
-  var tp=TIPS[dayIdx()%TIPS.length],dn=S.en.dc===td,f=fundOf(),al=fundAlloc(),sel=S.en.fs;
-  var top=FC.map(function(c){return [c[1],al[c[0]]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,3);
-  var html='<div class="hside"><div class="dly"><div class="dh"><span class="tagd">오늘의 한 가지</span><span class="stk">'+S.en.vs+'일째 방문</span></div><b>'+esc(tp[0])+'</b><p>'+esc(tp[1])+'</p><button class="chip" id="dck" type="button" aria-pressed="'+dn+'">'+(dn?'오늘 해봤어요':'해봤어요')+'</button></div>'+
-   '<button class="fcard" id="fcd" type="button"><small>이번 달 즐거운 자금</small><b>'+(sel?'월 '+won(f):'아직 정하지 않았어요')+'</b><span>'+(sel?top.map(function(t){return t[0]+' '+t[1]+'만'}).join(' · '):'관심사를 고르면 쓰는 방법을 추천해 드려요')+'</span><i class="cta2" style="background:var(--acc);color:var(--acc-ink)">'+(sel?'조합 보기':'자금 짜보기')+' →</i></button></div>';
+  var f=fundOf(),sel=S.en.fs,I=monthInfo();
+  if(S.diag){var r=retInfo(),k=el.querySelector('.hero2 .k');if(k)k.textContent='은퇴까지 '+r.txt+(r.d>0?' · '+r.ym:'')+' · '+Reff()+'세 은퇴'}
+  var pc=Math.min(100,I.sp/Math.max(1,I.f)*100);
+  var html='<div class="hside"><button class="fcard" id="fcd" type="button"><small>이번 달 즐거운 자금</small><b>'+(sel?'월 '+won(f):'아직 정하지 않았어요')+'</b>'+
+   (sel?'<span class="tr"><i style="width:'+pc.toFixed(1)+'%;'+(I.rem<0?'background:var(--gap)':'')+'"></i></span><span>쓴 돈 '+mf(I.sp)+' / 계획 '+mf(f)+'</span><span><b style="font-size:16px">'+(I.rem<0?'초과 ':'남은 돈 ')+mf(Math.abs(I.rem))+'</b></span>':'<span>관심사를 고르면 쓰는 방법을 추천해 드려요</span>')+
+   '<i class="cta2" style="background:var(--acc);color:var(--acc-ink)">'+(sel?'지출 기록·계획 보기':'자금 짜보기')+' →</i></button></div>';
   var hr=el.querySelector('.hero2');if(hr)hr.insertAdjacentHTML('afterend',html);
   el.classList.add('hm');
-  var q=el.querySelector('.qc[data-g="enjoy"] b');if(q)q.textContent=sel?'월 '+won(f):'정해보기';
-  $('#dck').onclick=function(){S.en.dc=S.en.dc===td?'':td;save();var b=$('#dck');b.setAttribute('aria-pressed',S.en.dc===td);b.textContent=S.en.dc===td?'오늘 해봤어요':'해봤어요'};
+  var q=el.querySelector('.qc[data-g="enjoy"]');if(q){q.querySelector('small').textContent='이번 달 남은 돈';q.querySelector('b').textContent=sel?mf(Math.max(0,I.rem)):'정해보기'}
+  var qa=el.querySelector('.qc[data-g="asset"]');if(qa){var tot=totalA(),net=tot-debtA();qa.querySelector('small').textContent=debtA()?'내 순자산':'내 총자산';qa.querySelector('b').textContent=tot?mf(Math.max(0,net)):'입력하기'}
+  var qf=el.querySelector('.qc[data-g="flow"]');if(qf&&S.diag&&planLev()){var cp=chalProgress();qf.querySelector('b').textContent=cp.total?cp.d+' / '+cp.total+' ('+Math.round(cp.d/cp.total*100)+'%)':'시작하기'}
   $('#fcd').onclick=function(){goTab('enjoy')};
 };
 
 /* ===== v6: 접기, 스크롤 유지, 자산 상세·시뮬레이션 ===== */
+/* 현금흐름 맨 위: 자산 한눈에 */
+var _flow0=SCR.flow;
+SCR.flow=function(el){
+  _flow0(el);
+  var tot=totalA(),debt=debtA(),net=tot-debt,fin=finTotal(),h1=el.querySelector('h1');if(!h1)return;
+  var html;
+  if(tot){
+    var g=S.diag?planGap():0,mon=fin*S.ay/10/100/12,sub=S.diag?(g>0?'금융자산이 만드는 월 소득 약 '+won(mon)+' · 부족한 돈 월 '+won(g)+'의 '+Math.min(999,Math.round(mon/g*100))+'%':'금융자산이 만드는 월 소득 약 '+won(mon)+' · 부족한 돈 없음'):'현금흐름을 입력하면 자산과 함께 계산해요';
+    html='<button class="fa" type="button" data-go="asset"><small>내 자산 (자산과 현금흐름이 함께 자라야 해요)</small><b>'+mf(Math.max(0,net))+'</b><span>금융자산 '+mf(fin)+' · 부동산 '+mf(reSum())+(debt?' · 부채 '+mf(debt):'')+'</span><span>'+sub+'</span></button>';
+  }else html='<button class="fa hl" type="button" data-go="asset"><small>내 자산</small><b>아직 입력 전이에요</b><span>자산을 입력하면 현금흐름과 함께 보여 드려요. 눌러서 입력하기 →</span></button>';
+  h1.insertAdjacentHTML('afterend',html);
+  el.querySelector('.fa').onclick=function(){goTab('asset')};
+};
 /* 접기 */
 var DEFCL=['영상으로 먼저 보기','Gap 줄이기'];
 function mkFold(sec,h,grp,body){
